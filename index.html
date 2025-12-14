@@ -33,12 +33,12 @@
         }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; white-space: nowrap; }
         
-        /* NAV PILLS (Restaurado Estilo Original) */
+        /* NAV PILLS */
         .nav-pills { display: flex; gap: 5px; background: #222; padding: 4px; border-radius: 6px; overflow-x: auto; }
         .nav-item { 
             padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: 600; 
             color: #888; transition: 0.2s; display: flex; align-items: center; gap: 5px; 
-            border: 1px solid transparent; white-space: nowrap; user-select: none;
+            border: 1px solid transparent; white-space: nowrap; user-select: none; text-transform: uppercase;
         }
         .nav-item.active { background: var(--brand); color: #000; }
         .nav-item:hover:not(.active) { color: var(--brand); border-color: #444; }
@@ -78,7 +78,6 @@
         
         .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; }
         
-        /* Alturas */
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
 
@@ -97,36 +96,38 @@
         .bg-prev { background: rgba(52, 152, 219, 0.15); color: var(--blue); border: 1px solid rgba(52, 152, 219, 0.3); }
         .bg-start { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
 
-        /* --- CONTROLES INTERNOS (Emparelhamento Lado a Lado) --- */
+        /* Controles Internos (Lado a Lado) */
         .sub-header-controls { 
-            display: flex; 
-            gap: 8px; 
-            align-items: center; 
+            display: flex; gap: 8px; align-items: center; 
             background: #252525; padding: 6px 10px; border-radius: 4px; border: 1px solid #333; 
-            flex-wrap: nowrap; /* FORÇA LINHA ÚNICA */
-            width: auto;
+            flex-wrap: nowrap; width: auto;
         }
-        
-        /* Select cresce para ocupar espaço */
-        .sub-header-controls select { 
-            flex: 1; 
-            min-width: 0; /* Permite encolher se necessário */
-            width: auto;
-        }
-        
-        /* Botão fica com tamanho fixo */
-        .sub-header-controls button { 
-            flex: 0 0 auto; 
-            white-space: nowrap; 
-        }
+        .sub-header-controls select { flex: 1; min-width: 0; width: auto; }
+        .sub-header-controls button { flex: 0 0 auto; white-space: nowrap; }
 
         /* ================= RESPONSIVIDADE ================= */
         @media (max-width: 900px) {
             header { justify-content: center; padding-bottom: 15px; }
             .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
-            .nav-pills { order: 2; width: 100%; justify-content: center; margin-bottom: 5px; }
-            .filter-bar { order: 3; width: 100%; justify-content: center; }
             
+            /* -- NAV PILLS AJUSTE FINO (LARGURA TOTAL, SEM SCROLL) -- */
+            .nav-pills { 
+                order: 2; 
+                width: 100%; 
+                justify-content: space-between; 
+                margin-bottom: 5px; 
+                overflow-x: hidden; /* Remove scroll */
+            }
+            .nav-item {
+                flex: 1; /* Divide espaço igualmente */
+                justify-content: center; /* Centraliza texto */
+                padding: 8px 2px; /* Reduz padding lateral para caber */
+                font-size: 11px; /* Ajuste leve na fonte */
+                text-align: center;
+            }
+            /* ----------------------------------------------------- */
+
+            .filter-bar { order: 3; width: 100%; justify-content: center; }
             #main-filter { width: 100%; max-width: 300px; text-align: center; }
 
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -136,8 +137,6 @@
             .chart-panel.normal-h { min-height: 300px; }
             .chart-panel.compact { min-height: 280px; }
             .dashboard-view { padding: 10px; }
-
-            /* Mobile: Garante que os controles ocupem a largura disponível mas mantenham linha única */
             .sub-header-controls { width: 100%; margin-top: 5px; }
         }
     </style>
