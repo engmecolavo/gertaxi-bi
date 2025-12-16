@@ -110,22 +110,9 @@
             header { justify-content: center; padding-bottom: 15px; }
             .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
             
-            /* -- NAV PILLS AJUSTE FINO (LARGURA TOTAL, SEM SCROLL) -- */
-            .nav-pills { 
-                order: 2; 
-                width: 100%; 
-                justify-content: space-between; 
-                margin-bottom: 5px; 
-                overflow-x: hidden; /* Remove scroll */
-            }
-            .nav-item {
-                flex: 1; /* Divide espaço igualmente */
-                justify-content: center; /* Centraliza texto */
-                padding: 8px 2px; /* Reduz padding lateral para caber */
-                font-size: 11px; /* Ajuste leve na fonte */
-                text-align: center;
-            }
-            /* ----------------------------------------------------- */
+            /* -- NAV PILLS AJUSTE FINO -- */
+            .nav-pills { order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; overflow-x: hidden; }
+            .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
 
             .filter-bar { order: 3; width: 100%; justify-content: center; }
             #main-filter { width: 100%; max-width: 300px; text-align: center; }
@@ -207,11 +194,11 @@
         
         <div class="chart-panel full-width normal-h">
             <div class="panel-header">
-                <span><span class="material-icons" style="font-size:14px; vertical-align:middle; color:var(--green)">engineering</span> Técnicos em Atividade</span>
+                <span><span class="material-icons" style="font-size:14px; vertical-align:middle; color:var(--green)">engineering</span> Técnicos em Atividade <span id="op-today-date" style="font-weight:400; font-size:11px; color:var(--text-muted); margin-left:8px;"></span></span>
             </div>
             <div class="table-container">
                 <table id="tableMO">
-                    <thead><tr><th>O.S.</th><th>Técnico</th><th>Frota</th><th>Tipo</th><th>Serviço</th><th>Início</th></tr></thead>
+                    <thead><tr><th>O.S.</th><th>Técnico</th><th>Frota</th><th>Tipo</th><th>Natureza</th><th>Serviço</th><th>Início</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -328,7 +315,12 @@
     };
     let charts = {};
 
-    window.onload = async () => { await loadFiles(); updateFilterOptions(); runDashboardLogic(); };
+    window.onload = async () => { 
+        document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR');
+        await loadFiles(); 
+        updateFilterOptions(); 
+        runDashboardLogic(); 
+    };
 
     async function loadFiles() {
         try {
@@ -356,41 +348,87 @@
 
     function updateFilterOptions() {
         const select = document.getElementById('main-filter'); select.innerHTML = '';
-        if (!STATE.data.frota) return;
-        const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
-        addOption(select, 'Todos', 'Todos os Contratos'); lotes.forEach(l => addOption(select, l, l));
+        
+        if (STATE.mode === 'operacional') {
+            // Lógica para filtro de BASE DE EXECUÇÃO (Oficina)
+            if (!STATE.data.ordem) return;
+            // Busca coluna 'Base de execução'. (Adicionei fallback para 'Oficina' ou 'Base' só por segurança, mas prioriza o seu nome correto)
+            const oficinas = [...new Set(STATE.data.ordem.map(o => o['Base de execução'] || o['Oficina'] || o['Base']).filter(l => l && l.trim() !== ''))].sort();
+            addOption(select, 'Todos', 'Todas as Bases');
+            oficinas.forEach(l => addOption(select, l, l));
+        } else {
+            // Lógica para filtro de CONTRATO (Lote) - Gerencial
+            if (!STATE.data.frota) return;
+            const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
+            addOption(select, 'Todos', 'Todos os Contratos'); 
+            lotes.forEach(l => addOption(select, l, l));
+        }
     }
 
     function runDashboardLogic() { const f = document.getElementById('main-filter').value; STATE.mode === 'operacional' ? processOperational(f) : processManagerial(f); }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL
+    // LÓGICA OPERACIONAL (CORRIGIDA PARA BASE DE EXECUÇÃO)
     // =========================================================================
-    function processOperational(contractFilter) {
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => contractFilter === 'Todos' || frotaLoteMap.get(frota) === contractFilter;
+    function processOperational(filterValue) {
+        const checkBase = (item, type) => {
+            if (filterValue === 'Todos') return true;
+            if (type === 'ordem') return (item['Base de execução'] || item['Oficina'] || item['Base']) === filterValue;
+            if (type === 'req') return true; 
+            return true; 
+        };
 
-        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
+        // Requisições e Ordens
+        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkBase(r, 'req'));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
-        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
         
-        // Tabela MO
-        const servsIniciados = STATE.data.serv.filter(s => norm(s['Status do serviço']) === 'INICIADO' && checkContract(s['Frota']));
-        const moTabelaDados = [];
-        servsIniciados.forEach(s => {
-            const moEntries = STATE.data.mo.filter(m => (m['ID_SERV'] || m['ID_Ordem']) === s['ID'] || (m['ID_SERV'] || m['ID_Ordem']) === s['ID_Ordem']);
-            const ordem = STATE.data.ordem.find(o => o['ID'] === s['ID_Ordem']);
-            const tipoManut = ordem ? ordem['Tipo de manutenção'] : 'N/A';
-            const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
-            if(moEntries.length > 0) {
-                moEntries.forEach(m => moTabelaDados.push({ numOrdem, tecnico: m['Técnico']||'ND', frota: s['Frota'], tipoManut, tipoServ: s['Tipo de serviço']||s['Serviço'], inicio: m['Hora inicial']||'--', status: 'EM ANDAMENTO' }));
-            } else {
-                moTabelaDados.push({ numOrdem, tecnico: 'Aguardando', frota: s['Frota'], tipoManut, tipoServ: s['Tipo de serviço']||s['Serviço'], inicio: '--', status: 'EM ANDAMENTO' });
-            }
+        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkBase(o, 'ordem'));
+        
+        // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
+        const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+
+        const moAtivos = STATE.data.mo.filter(m => {
+            const hIni = m['Hora inicial'];
+            const hFim = m['Hora final'];
+            return (hIni && hIni.trim() !== '') && (!hFim || hFim.trim() === '');
         });
+
+        const moTabelaDados = [];
+        
+        moAtivos.forEach(m => {
+            const idServ = m['ID_SERV'];
+            const idOrdemRef = m['ID_Ordem'];
+            
+            let serv = null, ordem = null;
+            if(idServ) { serv = servMap.get(idServ); if(serv) ordem = ordemMap.get(serv['ID_Ordem']); }
+            else if(idOrdemRef) { ordem = ordemMap.get(idOrdemRef); }
+
+            // Aplicar Filtro de Base na MO usando a Ordem associada
+            if (filterValue !== 'Todos' && ordem) {
+                if ((ordem['Base de execução'] || ordem['Oficina'] || ordem['Base']) !== filterValue) return;
+            }
+
+            const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
+            const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : 'N/A');
+            const tipoManut = ordem ? ordem['Tipo de manutenção'] : 'N/A';
+            const natureza = serv ? (serv['Natureza do serviço'] || '-') : '-';
+            const nomeServico = serv ? (serv['Tipo de serviço'] || serv['Serviço']) : (m['Serviço'] || 'Mão de Obra Geral');
+
+            moTabelaDados.push({ 
+                numOrdem, 
+                tecnico: m['Técnico']||'ND', 
+                frota: frota, 
+                tipoManut, 
+                natureza: natureza,
+                tipoServ: nomeServico, 
+                inicio: m['Hora inicial'] 
+            });
+        });
+
         const tbodyMO = document.querySelector('#tableMO tbody'); tbodyMO.innerHTML = '';
-        if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Sem atividade.</td></tr>';
-        else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut.substring(0,4)}</span></td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
+        if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico apontando hora agora.</td></tr>';
+        else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut.substring(0,4)}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
         // KPIs
         let somaDias=0; const hoje=new Date(); ordensAbertas.forEach(o=>{const d=parseDate(o['Data da abertura']); if(d) somaDias+=(hoje-d)/(864e5);});
@@ -411,7 +449,7 @@
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL
+    // LÓGICA GERENCIAL (MANTIDA)
     // =========================================================================
     function processManagerial(contratoFilter) {
         const frota = STATE.data.frota.filter(f => {
