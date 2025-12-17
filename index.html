@@ -43,14 +43,35 @@
         .nav-item.active { background: var(--brand); color: #000; }
         .nav-item:hover:not(.active) { color: var(--brand); border-color: #444; }
 
-        /* FILTROS GERAIS */
-        .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; }
-        select { background: #333; border: 1px solid #555; color: #fff; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 500; min-width: 120px; font-size: 13px; }
-
-        /* DASHBOARD VIEW */
-        .dashboard-view { display: none; padding: 20px; animation: fadein 0.4s; }
-        .dashboard-view.visible { display: block; }
-        @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* FILTROS GERAIS & CUSTOM DROPDOWN */
+        .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
+        
+        /* Estilo do Dropdown Customizado para Multiseleção */
+        .custom-dropdown {
+            position: relative;
+            width: 200px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .dropdown-btn {
+            background: #333; border: 1px solid #555; color: #fff; 
+            padding: 8px 12px; border-radius: 4px; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .dropdown-content {
+            display: none; position: absolute; top: 100%; left: 0; width: 100%;
+            background: #252525; border: 1px solid #444; border-radius: 4px;
+            max-height: 300px; overflow-y: auto; z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-top: 5px;
+        }
+        .dropdown-content.show { display: block; }
+        .dropdown-item {
+            padding: 8px 10px; border-bottom: 1px solid #333; 
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            color: #ccc;
+        }
+        .dropdown-item:hover { background: #333; color: #fff; }
+        .dropdown-item input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: var(--brand); }
 
         /* KPI CARDS */
         .kpi-row { 
@@ -86,6 +107,7 @@
         .table-container { height: 100%; overflow-y: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
 
+        /* Container de Altura Fixa para Gráficos de Evolução */
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
         /* TABELAS */
@@ -98,13 +120,13 @@
         .bg-prev { background: rgba(52, 152, 219, 0.15); color: var(--blue); border: 1px solid rgba(52, 152, 219, 0.3); }
         .bg-start { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
 
-        /* Controles Internos (Lado a Lado) */
+        /* Controles Internos */
         .sub-header-controls { 
             display: flex; gap: 8px; align-items: center; 
             background: #252525; padding: 6px 10px; border-radius: 4px; border: 1px solid #333; 
             flex-wrap: nowrap; width: auto;
         }
-        .sub-header-controls select { flex: 1; min-width: 0; width: auto; }
+        .sub-header-controls select { flex: 1; min-width: 0; width: auto; background:#333; color:#fff; border:1px solid #555; padding:6px; border-radius:4px; }
         
         .btn-clear {
             background: #333; color: #fff; border: 1px solid #555;
@@ -114,25 +136,25 @@
         }
         .btn-clear:hover { background: var(--brand); color: #000; border-color: var(--brand); }
 
+        /* DASHBOARD VIEW */
+        .dashboard-view { display: none; padding: 20px; animation: fadein 0.4s; }
+        .dashboard-view.visible { display: block; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
         /* ================= RESPONSIVIDADE ================= */
         @media (max-width: 900px) {
             header { justify-content: center; padding-bottom: 15px; }
             .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
-            
             .nav-pills { order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; overflow-x: hidden; }
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
-
             .filter-bar { order: 3; width: 100%; justify-content: center; }
-            #main-filter { width: 100%; max-width: 300px; text-align: center; }
-
+            .custom-dropdown { width: 100%; max-width: 300px; }
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
             .charts-row, .split-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
-            
             .chart-panel.normal-h { min-height: 300px; }
             .chart-panel.compact { min-height: 280px; }
             .dashboard-view { padding: 10px; }
-            .sub-header-controls { width: 100%; margin-top: 5px; }
         }
     </style>
 </head>
@@ -154,7 +176,14 @@
     </div>
 
     <div class="filter-bar">
-        <select id="main-filter" onchange="runDashboardLogic()"></select>
+        <div class="custom-dropdown" id="main-filter-container">
+            <div class="dropdown-btn" onclick="toggleFilterMenu()">
+                <span id="filter-text">Carregando...</span>
+                <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
+            </div>
+            <div class="dropdown-content" id="filter-options">
+                </div>
+        </div>
         <div id="loading" style="font-size:10px; color:#666; margin-left:5px">
             <span class="material-icons" style="font-size:12px; animation:spin 1s infinite linear">sync</span>
         </div>
@@ -318,17 +347,27 @@
     const STATE = { 
         mode: 'operacional', 
         data: {}, 
-        filters: { contract: 'Todos', naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null },
+        filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null },
         processed: { centralData: [], mkbfData: {}, mttrData: {} }
     };
     let charts = {};
 
     window.onload = async () => { 
+        // Data formatada com dia da semana
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
         await loadFiles(); 
-        updateFilterOptions(); 
+        
+        // Fechar dropdown ao clicar fora
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('main-filter-container');
+            if (!container.contains(e.target)) {
+                document.getElementById('filter-options').classList.remove('show');
+            }
+        });
+
+        initFilterOptions(); 
         runDashboardLogic(); 
     };
 
@@ -344,72 +383,138 @@
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
     }
 
+    // --- UI GERAL ---
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`).classList.add('active');
         document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
         document.getElementById(`view-${mode}`).classList.add('visible');
-        updateFilterOptions(); runDashboardLogic();
+        runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
-    function addOption(s,v,t) { const o=document.createElement('option'); o.value=v; o.innerText=t; s.appendChild(o); }
 
-    function updateFilterOptions() {
-        const select = document.getElementById('main-filter'); select.innerHTML = '';
+    // --- LÓGICA DO DROPDOWN MULTI-SELEÇÃO ---
+    function toggleFilterMenu() {
+        document.getElementById('filter-options').classList.toggle('show');
+    }
+
+    function initFilterOptions() {
+        const container = document.getElementById('filter-options');
+        container.innerHTML = '';
         
-        if (STATE.mode === 'operacional') {
-            if (!STATE.data.ordem) return;
-            const oficinas = [...new Set(STATE.data.ordem.map(o => o['Base de execução'] || o['Oficina'] || o['Base']).filter(l => l && l.trim() !== ''))].sort();
-            addOption(select, 'Todos', 'Todas as Bases');
-            oficinas.forEach(l => addOption(select, l, l));
+        if (!STATE.data.frota) return;
+        
+        // Obter contratos únicos
+        const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
+        
+        // Adicionar opção "Todos"
+        addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
+        
+        // Adicionar cada contrato
+        lotes.forEach(l => addCheckboxOption(container, l, l, false));
+        
+        updateFilterButtonLabel();
+    }
+
+    function addCheckboxOption(container, value, label, isChecked) {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.onclick = (e) => {
+            if(e.target.tagName !== 'INPUT') {
+                const chk = item.querySelector('input');
+                chk.checked = !chk.checked;
+                handleCheckboxChange(chk);
+            }
+        };
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.checked = isChecked;
+        if(isChecked) STATE.filters.contracts.add(value);
+        
+        checkbox.onchange = () => handleCheckboxChange(checkbox);
+        
+        const text = document.createElement('span');
+        text.innerText = label;
+        
+        item.appendChild(checkbox);
+        item.appendChild(text);
+        container.appendChild(item);
+    }
+
+    function handleCheckboxChange(changedChk) {
+        const val = changedChk.value;
+        const allChk = document.querySelectorAll('#filter-options input[type="checkbox"]');
+        
+        if (val === 'Todos') {
+            // Se clicou em Todos, desmarca os outros
+            if(changedChk.checked) {
+                allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
+                STATE.filters.contracts.clear();
+                STATE.filters.contracts.add('Todos');
+            } else {
+                // Se desmarcou Todos, não faz nada (tem que ter pelo menos um)
+                 if(STATE.filters.contracts.size === 1) changedChk.checked = true;
+            }
         } else {
-            if (!STATE.data.frota) return;
-            const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
-            addOption(select, 'Todos', 'Todos os Contratos'); 
-            lotes.forEach(l => addOption(select, l, l));
+            // Se clicou em um contrato específico
+            if(changedChk.checked) {
+                // Remove 'Todos' se estiver marcado
+                const chkTodos = document.querySelector('input[value="Todos"]');
+                if(chkTodos && chkTodos.checked) {
+                    chkTodos.checked = false;
+                    STATE.filters.contracts.delete('Todos');
+                }
+                STATE.filters.contracts.add(val);
+            } else {
+                STATE.filters.contracts.delete(val);
+                // Se desmarcou tudo, volta para 'Todos'
+                if(STATE.filters.contracts.size === 0) {
+                    const chkTodos = document.querySelector('input[value="Todos"]');
+                    if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
+                }
+            }
+        }
+        updateFilterButtonLabel();
+        runDashboardLogic();
+    }
+
+    function updateFilterButtonLabel() {
+        const lbl = document.getElementById('filter-text');
+        if(STATE.filters.contracts.has('Todos')) {
+            lbl.innerText = 'Todos os Contratos';
+        } else {
+            const count = STATE.filters.contracts.size;
+            lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`;
         }
     }
 
-    function runDashboardLogic() { const f = document.getElementById('main-filter').value; STATE.mode === 'operacional' ? processOperational(f) : processManagerial(f); }
+    function runDashboardLogic() { 
+        STATE.mode === 'operacional' ? processOperational() : processManagerial(); 
+    }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL (CORRIGIDA)
+    // LÓGICA OPERACIONAL (MULTISELEÇÃO VIA LOTE/CONTRATO)
     // =========================================================================
-    function processOperational(filterValue) {
-        // Mapa auxiliar: Frota -> Base (baseado nas Ordens Abertas)
-        // Isso permite descobrir a oficina de um veículo mesmo se a Requisição não tiver esse dado
-        const frotaBaseMap = new Map();
-        if (filterValue !== 'Todos' && STATE.data.ordem) {
-            STATE.data.ordem.forEach(o => {
-                const frota = o['Frota'];
-                const base = o['Base de execução'] || o['Oficina'] || o['Base'];
-                if (frota && base) {
-                    frotaBaseMap.set(frota, base);
-                }
-            });
-        }
-
-        const checkBase = (item, type) => {
-            if (filterValue === 'Todos') return true;
-            
-            // 1. Tenta pegar a base diretamente do item (Ordem ou Req)
-            let base = item['Base de execução'] || item['Oficina'] || item['Base'];
-            
-            // 2. Se for Requisição e não tiver base, tenta pegar pelo Mapa da Frota
-            if (!base && type === 'req' && item['Frota']) {
-                base = frotaBaseMap.get(item['Frota']);
-            }
-
-            return norm(base) === norm(filterValue);
+    function processOperational() {
+        // Mapear Frota -> Lote
+        const frotaLoteMap = new Map(); 
+        STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
+        
+        const checkContract = (frota) => {
+            if(STATE.filters.contracts.has('Todos')) return true;
+            const lote = frotaLoteMap.get(frota);
+            return lote && STATE.filters.contracts.has(lote);
         };
 
         // Requisições (Veículos Parados)
-        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkBase(r, 'req'));
+        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
         
         // Ordens Abertas
-        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkBase(o, 'ordem'));
+        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
         
         // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
@@ -431,14 +536,13 @@
             if(idServ) { serv = servMap.get(idServ); if(serv) ordem = ordemMap.get(serv['ID_Ordem']); }
             else if(idOrdemRef) { ordem = ordemMap.get(idOrdemRef); }
 
-            // Aplicar Filtro de Base na MO
-            if (filterValue !== 'Todos' && ordem) {
-                const baseOrdem = ordem['Base de execução'] || ordem['Oficina'] || ordem['Base'];
-                if (norm(baseOrdem) !== norm(filterValue)) return;
-            }
+            const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
+            
+            // Aplicar Filtro de Contrato na MO
+            if (!checkContract(frota)) return;
 
             const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
-            const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : 'N/A');
+            const fName = frota || 'N/A';
             const tipoManut = ordem ? ordem['Tipo de manutenção'] : 'N/A';
             const natureza = serv ? (serv['Natureza do serviço'] || '-') : '-';
             const nomeServico = serv ? (serv['Tipo de serviço'] || serv['Serviço']) : (m['Serviço'] || 'Mão de Obra Geral');
@@ -446,7 +550,7 @@
             moTabelaDados.push({ 
                 numOrdem, 
                 tecnico: m['Técnico']||'ND', 
-                frota: frota, 
+                frota: fName, 
                 tipoManut, 
                 natureza: natureza,
                 tipoServ: nomeServico, 
@@ -477,12 +581,15 @@
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL
+    // LÓGICA GERENCIAL (MULTISELEÇÃO VIA LOTE/CONTRATO)
     // =========================================================================
-    function processManagerial(contratoFilter) {
+    function processManagerial() {
+        // Filtrar frota primeiro
         const frota = STATE.data.frota.filter(f => {
             const t = norm(f['TIPO']), l = f['LOTE'];
-            return !t.includes('APOIO') && !t.includes('EQUIPAMENTO') && l !== 'Desmobilizado' && (contratoFilter === 'Todos' || l === contratoFilter);
+            const isValid = !t.includes('APOIO') && !t.includes('EQUIPAMENTO') && l !== 'Desmobilizado';
+            const isSelected = STATE.filters.contracts.has('Todos') || STATE.filters.contracts.has(l);
+            return isValid && isSelected;
         });
         const idsF = new Set(frota.map(f => f['FROTA']));
         
@@ -791,6 +898,7 @@
         let km=0, f=0; Object.values(g).forEach(k => { k.sort((a,b)=>a-b); for(let i=1; i<k.length; i++) { const d=k[i]-k[i-1]; if(d>0&&d<50000){km+=d; f++;} } });
         return f>0 ? km/f : 0;
     }
+    function addOption(s,v,t) { const o=document.createElement('option'); o.value=v; o.innerText=t; s.appendChild(o); }
 </script>
 </body>
 </html>
