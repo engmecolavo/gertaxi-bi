@@ -85,6 +85,9 @@
         
         .table-container { height: 100%; overflow-y: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
+
+        /* Altura customizada para alinhar com o scroll do ranking */
+        .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
         /* TABELAS */
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -103,7 +106,15 @@
             flex-wrap: nowrap; width: auto;
         }
         .sub-header-controls select { flex: 1; min-width: 0; width: auto; }
-        .sub-header-controls button { flex: 0 0 auto; white-space: nowrap; }
+        
+        /* Botão Limpar Padronizado */
+        .btn-clear {
+            background: #333; color: #fff; border: 1px solid #555;
+            padding: 6px 12px; border-radius: 4px; font-weight: bold; 
+            cursor: pointer; font-size: 10px; text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .btn-clear:hover { background: var(--brand); color: #000; border-color: var(--brand); }
 
         /* ================= RESPONSIVIDADE ================= */
         @media (max-width: 900px) {
@@ -194,7 +205,7 @@
         
         <div class="chart-panel full-width normal-h">
             <div class="panel-header">
-                <span><span class="material-icons" style="font-size:14px; vertical-align:middle; color:var(--green)">engineering</span> Técnicos em Atividade <span id="op-today-date" style="font-weight:400; font-size:11px; color:var(--text-muted); margin-left:8px;"></span></span>
+                <span><span class="material-icons" style="font-size:14px; vertical-align:middle; color:var(--green)">engineering</span> Técnicos em Atividade <span id="op-today-date" style="font-weight:600; font-size:11px; color:var(--text-muted); margin-left:8px; text-transform: uppercase;"></span></span>
             </div>
             <div class="table-container">
                 <table id="tableMO">
@@ -234,6 +245,7 @@
         <div class="sub-header-controls">
             <select id="central-year" onchange="updateCentralCharts()"></select>
             <select id="central-month" onchange="updateCentralCharts()"></select>
+            <button class="btn-clear" onclick="resetCentralSelection()">Limpar</button>
         </div>
     </div>
 
@@ -252,7 +264,7 @@
         <span>Confiabilidade (MKBF)</span>
         <div class="sub-header-controls">
             <select id="mkbf-year" onchange="renderMKBFPanels()"></select>
-            <button onclick="resetMKBFSelection()" style="background:var(--brand); border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:10px">Limpar</button>
+            <button class="btn-clear" onclick="resetMKBFSelection()">Limpar</button>
         </div>
     </div>
 
@@ -267,7 +279,7 @@
         </div>
         <div class="chart-panel compact">
             <div class="panel-header"><span id="lbl-mkbf-evolucao">Evolução</span></div>
-            <div style="flex:1; position: relative; min-height: 250px;"><canvas id="chartMgmtMKBF"></canvas></div>
+            <div class="evol-chart-container"><canvas id="chartMgmtMKBF"></canvas></div>
         </div>
     </div>
 
@@ -275,7 +287,7 @@
         <span>Manutenibilidade (MTTR)</span>
         <div class="sub-header-controls">
             <select id="mttr-year" onchange="renderMTTRPanels()"></select>
-            <button onclick="resetMTTRSelection()" style="background:var(--orange); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:10px">Limpar</button>
+            <button class="btn-clear" onclick="resetMTTRSelection()">Limpar</button>
         </div>
     </div>
 
@@ -291,7 +303,7 @@
 
         <div class="chart-panel compact">
             <div class="panel-header"><span id="lbl-mttr-evolucao">Evolução</span></div>
-            <div style="flex:1; position: relative; min-height: 250px;"><canvas id="chartMgmtMTTREvol"></canvas></div>
+            <div class="evol-chart-container"><canvas id="chartMgmtMTTREvol"></canvas></div>
         </div>
     </div>
 
@@ -316,7 +328,10 @@
     let charts = {};
 
     window.onload = async () => { 
-        document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR');
+        // Data formatada com dia da semana
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
+        
         await loadFiles(); 
         updateFilterOptions(); 
         runDashboardLogic(); 
@@ -350,14 +365,11 @@
         const select = document.getElementById('main-filter'); select.innerHTML = '';
         
         if (STATE.mode === 'operacional') {
-            // Lógica para filtro de BASE DE EXECUÇÃO (Oficina)
             if (!STATE.data.ordem) return;
-            // Busca coluna 'Base de execução'. (Adicionei fallback para 'Oficina' ou 'Base' só por segurança, mas prioriza o seu nome correto)
             const oficinas = [...new Set(STATE.data.ordem.map(o => o['Base de execução'] || o['Oficina'] || o['Base']).filter(l => l && l.trim() !== ''))].sort();
             addOption(select, 'Todos', 'Todas as Bases');
             oficinas.forEach(l => addOption(select, l, l));
         } else {
-            // Lógica para filtro de CONTRATO (Lote) - Gerencial
             if (!STATE.data.frota) return;
             const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
             addOption(select, 'Todos', 'Todos os Contratos'); 
@@ -368,20 +380,24 @@
     function runDashboardLogic() { const f = document.getElementById('main-filter').value; STATE.mode === 'operacional' ? processOperational(f) : processManagerial(f); }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL (CORRIGIDA PARA BASE DE EXECUÇÃO)
+    // LÓGICA OPERACIONAL (CORRIGIDA)
     // =========================================================================
     function processOperational(filterValue) {
         const checkBase = (item, type) => {
             if (filterValue === 'Todos') return true;
-            if (type === 'ordem') return (item['Base de execução'] || item['Oficina'] || item['Base']) === filterValue;
-            if (type === 'req') return true; 
-            return true; 
+            
+            // Verifica 'Base de execução' em Ordens e Requisições
+            const base = item['Base de execução'] || item['Oficina'] || item['Base'];
+            
+            // CORREÇÃO: O filtro agora é OBRIGATÓRIO também para Requisições
+            return base === filterValue; 
         };
 
-        // Requisições e Ordens
+        // Requisições (Veículos Parados)
         const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkBase(r, 'req'));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
         
+        // Ordens Abertas
         const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkBase(o, 'ordem'));
         
         // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
@@ -404,7 +420,7 @@
             if(idServ) { serv = servMap.get(idServ); if(serv) ordem = ordemMap.get(serv['ID_Ordem']); }
             else if(idOrdemRef) { ordem = ordemMap.get(idOrdemRef); }
 
-            // Aplicar Filtro de Base na MO usando a Ordem associada
+            // Aplicar Filtro de Base na MO
             if (filterValue !== 'Todos' && ordem) {
                 if ((ordem['Base de execução'] || ordem['Oficina'] || ordem['Base']) !== filterValue) return;
             }
@@ -449,7 +465,7 @@
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL (MANTIDA)
+    // LÓGICA GERENCIAL
     // =========================================================================
     function processManagerial(contratoFilter) {
         const frota = STATE.data.frota.filter(f => {
@@ -513,6 +529,13 @@
         addOption(selY, 'all', 'Ano'); years.forEach(y => addOption(selY, y, y));
         addOption(selM, 'all', 'Mês'); ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
         if(oldY && years.includes(parseInt(oldY))) selY.value = oldY; if(oldM) selM.value = oldM;
+    }
+
+    function resetCentralSelection() { 
+        STATE.filters.naturezaFocus = null; 
+        document.getElementById('central-year').value = 'all'; 
+        document.getElementById('central-month').value = 'all'; 
+        updateCentralCharts(); 
     }
 
     function updateCentralCharts() {
