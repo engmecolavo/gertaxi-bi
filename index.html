@@ -259,8 +259,8 @@
             <div class="card-value" id="mgmt-mttr-kpi">0h</div>
             <div class="card-sub">Horas/Falha</div>
         </div>
-        <div class="card" style="border-color: var(--brand)">
-            <div class="card-label">MKBF</div>
+        <div class="card" style="border-color: var(--red)">
+            <div class="card-label">MKBF Global</div>
             <div class="card-value" id="mgmt-mkbf">0</div>
             <div class="card-sub">Km/Falha</div>
         </div>
@@ -559,7 +559,7 @@
         });
 
         const tbodyMO = document.querySelector('#tableMO tbody'); tbodyMO.innerHTML = '';
-        if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico apontando hora agora.</td></tr>';
+        if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico em atividade no momento.</td></tr>';
         else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut.substring(0,4)}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
         // KPIs
@@ -704,7 +704,7 @@
     function renderMKBFVehicleChart(data) {
         const ctx = document.getElementById('chartMgmtMKBFVeic').getContext('2d');
         if(charts['mkbfVeic']) charts['mkbfVeic'].destroy();
-        const minHeight = 250; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
         document.getElementById('mkbf-veic-inner-container').style.height = `${finalHeight}px`;
         const labels = data.map(d => d.frota); const values = data.map(d => d.mkbf);
         const colors = labels.map(l => l === STATE.filters.mkbfVehicle ? '#FFD700' : '#3498db');
@@ -807,7 +807,7 @@
     function renderMTTRRankingChart(data) {
         const ctx = document.getElementById('chartMgmtMTTRRanking').getContext('2d');
         if(charts['mttrRank']) charts['mttrRank'].destroy();
-        const minHeight = 250; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
         document.getElementById('mttr-nat-inner-container').style.height = `${finalHeight}px`;
         const labels = data.map(d => d.natureza); const values = data.map(d => d.mttr.toFixed(1));
         const colors = labels.map(l => l === STATE.filters.mttrNatureza ? '#FFD700' : '#e67e22');
@@ -902,4 +902,3 @@
 </script>
 </body>
 </html>
-
