@@ -86,7 +86,6 @@
         .table-container { height: 100%; overflow-y: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
 
-        /* Altura customizada para alinhar com o scroll do ranking */
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
         /* TABELAS */
@@ -107,7 +106,6 @@
         }
         .sub-header-controls select { flex: 1; min-width: 0; width: auto; }
         
-        /* Botão Limpar Padronizado */
         .btn-clear {
             background: #333; color: #fff; border: 1px solid #555;
             padding: 6px 12px; border-radius: 4px; font-weight: bold; 
@@ -121,7 +119,6 @@
             header { justify-content: center; padding-bottom: 15px; }
             .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
             
-            /* -- NAV PILLS AJUSTE FINO -- */
             .nav-pills { order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; overflow-x: hidden; }
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
 
@@ -310,7 +307,6 @@
 </div>
 
 <script>
-    // --- LINKS CSV ---
     const FILES = {
         frota: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=752179198&single=true&output=csv',
         ordem: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=676143752&single=true&output=csv',
@@ -328,7 +324,6 @@
     let charts = {};
 
     window.onload = async () => { 
-        // Data formatada com dia da semana
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
@@ -349,7 +344,6 @@
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
     }
 
-    // --- UI GERAL ---
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -383,14 +377,31 @@
     // LÓGICA OPERACIONAL (CORRIGIDA)
     // =========================================================================
     function processOperational(filterValue) {
+        // Mapa auxiliar: Frota -> Base (baseado nas Ordens Abertas)
+        // Isso permite descobrir a oficina de um veículo mesmo se a Requisição não tiver esse dado
+        const frotaBaseMap = new Map();
+        if (filterValue !== 'Todos' && STATE.data.ordem) {
+            STATE.data.ordem.forEach(o => {
+                const frota = o['Frota'];
+                const base = o['Base de execução'] || o['Oficina'] || o['Base'];
+                if (frota && base) {
+                    frotaBaseMap.set(frota, base);
+                }
+            });
+        }
+
         const checkBase = (item, type) => {
             if (filterValue === 'Todos') return true;
             
-            // Verifica 'Base de execução' em Ordens e Requisições
-            const base = item['Base de execução'] || item['Oficina'] || item['Base'];
+            // 1. Tenta pegar a base diretamente do item (Ordem ou Req)
+            let base = item['Base de execução'] || item['Oficina'] || item['Base'];
             
-            // CORREÇÃO: O filtro agora é OBRIGATÓRIO também para Requisições
-            return base === filterValue; 
+            // 2. Se for Requisição e não tiver base, tenta pegar pelo Mapa da Frota
+            if (!base && type === 'req' && item['Frota']) {
+                base = frotaBaseMap.get(item['Frota']);
+            }
+
+            return norm(base) === norm(filterValue);
         };
 
         // Requisições (Veículos Parados)
@@ -422,7 +433,8 @@
 
             // Aplicar Filtro de Base na MO
             if (filterValue !== 'Todos' && ordem) {
-                if ((ordem['Base de execução'] || ordem['Oficina'] || ordem['Base']) !== filterValue) return;
+                const baseOrdem = ordem['Base de execução'] || ordem['Oficina'] || ordem['Base'];
+                if (norm(baseOrdem) !== norm(filterValue)) return;
             }
 
             const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
@@ -474,7 +486,6 @@
         });
         const idsF = new Set(frota.map(f => f['FROTA']));
         
-        // --- DADOS PAINEL CENTRAL ---
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servsCorretivos = STATE.data.serv.filter(s => {
             const ordem = ordemMap.get(s['ID_Ordem']);
@@ -491,12 +502,10 @@
         });
         setupCentralFilters(); updateCentralCharts();
 
-        // --- DADOS PAINEL MKBF E MTTR ---
         const reqsEnc = STATE.data.req.filter(r => idsF.has(r['Frota']) && norm(r['Status da requisição']) === 'ENCERRADA');
         processMKBFData(reqsEnc); setupMKBFYearFilter(); renderMKBFPanels();
         processMTTRData(idsF); setupMTTRYearFilter(); renderMTTRPanels();
 
-        // --- KPIs GERAIS ---
         const mkbfGlobal = calculateGlobalMKBF(reqsEnc);
         
         let totalH_KPI = 0;
@@ -518,9 +527,6 @@
         document.getElementById('mgmt-mttr-kpi').innerText = mttrKPI + 'h';
     }
 
-    // =========================================================================
-    // FILTROS CENTRAIS
-    // =========================================================================
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -546,9 +552,6 @@
         STATE.filters.naturezaFocus = null; document.getElementById('pareto-filter-label').innerText = `(Todas)`; updatePareto(filtered);
     }
 
-    // =========================================================================
-    // MKBF AVANÇADO
-    // =========================================================================
     function processMKBFData(reqs) {
         const byFrota = {};
         reqs.forEach(r => {
@@ -637,9 +640,6 @@
         });
     }
 
-    // =========================================================================
-    // MTTR AVANÇADO
-    // =========================================================================
     function processMTTRData(idsF) {
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
