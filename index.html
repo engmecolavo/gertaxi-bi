@@ -6,6 +6,7 @@
     <title>BI | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
@@ -259,8 +260,8 @@
             <div class="card-value" id="mgmt-mttr-kpi">0h</div>
             <div class="card-sub">Horas/Falha</div>
         </div>
-        <div class="card" style="border-color: var(--red)">
-            <div class="card-label">MKBF Global</div>
+        <div class="card" style="border-color: var(--brand)">
+            <div class="card-label">MKBF</div>
             <div class="card-value" id="mgmt-mkbf">0</div>
             <div class="card-sub">Km/Falha</div>
         </div>
@@ -353,7 +354,10 @@
     let charts = {};
 
     window.onload = async () => { 
-        // Data formatada com dia da semana
+        // Registrar Plugin Datalabels
+        Chart.register(ChartDataLabels);
+
+        // Data formatada
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
@@ -405,13 +409,9 @@
         
         if (!STATE.data.frota) return;
         
-        // Obter contratos únicos
         const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
         
-        // Adicionar opção "Todos"
         addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
-        
-        // Adicionar cada contrato
         lotes.forEach(l => addCheckboxOption(container, l, l, false));
         
         updateFilterButtonLabel();
@@ -449,19 +449,15 @@
         const allChk = document.querySelectorAll('#filter-options input[type="checkbox"]');
         
         if (val === 'Todos') {
-            // Se clicou em Todos, desmarca os outros
             if(changedChk.checked) {
                 allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
                 STATE.filters.contracts.clear();
                 STATE.filters.contracts.add('Todos');
             } else {
-                // Se desmarcou Todos, não faz nada (tem que ter pelo menos um)
                  if(STATE.filters.contracts.size === 1) changedChk.checked = true;
             }
         } else {
-            // Se clicou em um contrato específico
             if(changedChk.checked) {
-                // Remove 'Todos' se estiver marcado
                 const chkTodos = document.querySelector('input[value="Todos"]');
                 if(chkTodos && chkTodos.checked) {
                     chkTodos.checked = false;
@@ -470,7 +466,6 @@
                 STATE.filters.contracts.add(val);
             } else {
                 STATE.filters.contracts.delete(val);
-                // Se desmarcou tudo, volta para 'Todos'
                 if(STATE.filters.contracts.size === 0) {
                     const chkTodos = document.querySelector('input[value="Todos"]');
                     if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
@@ -499,7 +494,6 @@
     // LÓGICA OPERACIONAL (MULTISELEÇÃO VIA LOTE/CONTRATO)
     // =========================================================================
     function processOperational() {
-        // Mapear Frota -> Lote
         const frotaLoteMap = new Map(); 
         STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         
@@ -509,14 +503,11 @@
             return lote && STATE.filters.contracts.has(lote);
         };
 
-        // Requisições (Veículos Parados)
         const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
         
-        // Ordens Abertas
         const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
         
-        // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
 
@@ -538,7 +529,6 @@
 
             const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
             
-            // Aplicar Filtro de Contrato na MO
             if (!checkContract(frota)) return;
 
             const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
@@ -560,9 +550,8 @@
 
         const tbodyMO = document.querySelector('#tableMO tbody'); tbodyMO.innerHTML = '';
         if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico em atividade no momento.</td></tr>';
-        else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut.substring(0,4)}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
+        else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
-        // KPIs
         let somaDias=0; const hoje=new Date(); ordensAbertas.forEach(o=>{const d=parseDate(o['Data da abertura']); if(d) somaDias+=(hoje-d)/(864e5);});
         const tma = ordensAbertas.length>0?(somaDias/ordensAbertas.length).toFixed(1):0;
         let totalHH=0, hhCorr=0, hhPrev=0; const idsAbertos=new Set(ordensAbertas.map(o=>o['ID']));
@@ -575,16 +564,17 @@
         const tbodyOp=document.querySelector('#tableOp tbody'); tbodyOp.innerHTML='';
         ordensAbertas.forEach(o => {
             let oHH=0; STATE.data.mo.forEach(m=>{if((m['ID_SERV']||m['ID_Ordem'])===o['ID']) oHH+=calcDuration(m['Hora inicial'], m['Hora final']);});
-            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção'].substring(0,4)}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
+            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
         });
-        renderDoughnut('chartOpType', ['Corretiva', 'Preventiva'], [hhCorr, hhPrev], ['#e74c3c', '#3498db']);
+        
+        // Renderizar com Rótulos de Dados
+        renderDoughnutWithLabels('chartOpType', ['Corretiva', 'Preventiva'], [hhCorr, hhPrev], ['#e74c3c', '#3498db']);
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL (MULTISELEÇÃO VIA LOTE/CONTRATO)
+    // LÓGICA GERENCIAL
     // =========================================================================
     function processManagerial() {
-        // Filtrar frota primeiro
         const frota = STATE.data.frota.filter(f => {
             const t = norm(f['TIPO']), l = f['LOTE'];
             const isValid = !t.includes('APOIO') && !t.includes('EQUIPAMENTO') && l !== 'Desmobilizado';
@@ -715,7 +705,7 @@
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mkbfVehicle = labels[idx]; renderMKBFPanels(); } },
                 scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false }, datalabels: { display: false } }
             }
         });
     }
@@ -742,7 +732,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false }, datalabels: { display: false } }
             }
         });
     }
@@ -818,7 +808,7 @@
                 indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                 onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mttrNatureza = labels[idx]; renderMTTRPanels(); } },
                 scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false }, datalabels: { display: false } }
             }
         });
     }
@@ -845,7 +835,7 @@
             options: {
                 responsive: true, maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
-                plugins: { legend: { display: false } }
+                plugins: { legend: { display: false }, datalabels: { display: false } }
             }
         });
     }
@@ -857,7 +847,11 @@
             type: 'doughnut', 
             data: {labels:l, datasets:[{data:d, backgroundColor:['#e74c3c','#f1c40f','#3498db','#9b59b6','#2ecc71','#e67e22'], borderWidth:0}]},
             options: { 
-                responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}},
+                responsive:true, maintainAspectRatio:false, 
+                plugins:{
+                    legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}, 
+                    datalabels: { display: false } 
+                },
                 onClick: (e, el) => {
                     if(el.length > 0) {
                         const lbl = l[el[0].index]; STATE.filters.naturezaFocus = lbl;
@@ -881,14 +875,43 @@
         charts['pareto'] = new Chart(ctx, {
             type: 'bar', 
             data: {labels:l, datasets:[{label:'Qtd', data:v, backgroundColor:'#FFD700', order:2}, {label:'%', data:acc, type:'line', borderColor:'#e74c3c', yAxisID:'y1', order:1}]},
-            options: { responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true, grid:{color:'#333'}}, y1:{position:'right', min:0, max:100, grid:{display:false}}, x:{ticks:{color:'#aaa', font:{size:10}}}} }
+            options: { responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true, grid:{color:'#333'}}, y1:{position:'right', min:0, max:100, grid:{display:false}}, x:{ticks:{color:'#aaa', font:{size:10}}}}, plugins: { datalabels: { display: false } } }
         });
     }
 
-    function renderDoughnut(id, l, d, c) {
+    // Função de Rosca COM Datalabels para o painel operacional
+    function renderDoughnutWithLabels(id, l, d, c) {
         const ctx = document.getElementById(id).getContext('2d');
         if(charts[id]) charts[id].destroy();
-        charts[id] = new Chart(ctx, { type: 'doughnut', data: {labels:l, datasets:[{data:d, backgroundColor:c, borderWidth:0}]}, options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}}} });
+        charts[id] = new Chart(ctx, { 
+            type: 'doughnut', 
+            data: {labels:l, datasets:[{data:d, backgroundColor:c, borderWidth:0}]}, 
+            options: {
+                responsive:true, 
+                maintainAspectRatio:false, 
+                plugins:{
+                    legend:{position:'right', labels:{color:'#aaa', font:{size:11}}},
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: (value, ctx) => {
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => { sum += data; });
+                            if(sum === 0) return '0%';
+                            let percentage = (value*100 / sum).toFixed(1)+"%";
+                            return percentage;
+                        },
+                        display: function(context) {
+                             var dataset = context.dataset;
+                             var value = dataset.data[context.dataIndex];
+                             var total = dataset.data.reduce((a, b) => a + b, 0);
+                             return (total > 0 && (value / total > 0.05)); // Mostrar apenas se > 5%
+                        }
+                    }
+                }
+            } 
+        });
     }
 
     function parseDate(s) { if(!s)return null; if(s.includes('/')) {const p=s.split(' ')[0].split('/'); return new Date(p[2],p[1]-1,p[0]);} return new Date(s); }
