@@ -357,7 +357,7 @@
         // Registrar Plugin Datalabels
         Chart.register(ChartDataLabels);
 
-        // Data formatada
+        // Data formatada com dia da semana
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
@@ -409,9 +409,13 @@
         
         if (!STATE.data.frota) return;
         
+        // Obter contratos únicos
         const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
         
+        // Adicionar opção "Todos"
         addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
+        
+        // Adicionar cada contrato
         lotes.forEach(l => addCheckboxOption(container, l, l, false));
         
         updateFilterButtonLabel();
@@ -449,15 +453,19 @@
         const allChk = document.querySelectorAll('#filter-options input[type="checkbox"]');
         
         if (val === 'Todos') {
+            // Se clicou em Todos, desmarca os outros
             if(changedChk.checked) {
                 allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
                 STATE.filters.contracts.clear();
                 STATE.filters.contracts.add('Todos');
             } else {
+                // Se desmarcou Todos, não faz nada (tem que ter pelo menos um)
                  if(STATE.filters.contracts.size === 1) changedChk.checked = true;
             }
         } else {
+            // Se clicou em um contrato específico
             if(changedChk.checked) {
+                // Remove 'Todos' se estiver marcado
                 const chkTodos = document.querySelector('input[value="Todos"]');
                 if(chkTodos && chkTodos.checked) {
                     chkTodos.checked = false;
@@ -466,6 +474,7 @@
                 STATE.filters.contracts.add(val);
             } else {
                 STATE.filters.contracts.delete(val);
+                // Se desmarcou tudo, volta para 'Todos'
                 if(STATE.filters.contracts.size === 0) {
                     const chkTodos = document.querySelector('input[value="Todos"]');
                     if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
@@ -491,9 +500,10 @@
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL (MULTISELEÇÃO VIA LOTE/CONTRATO)
+    // LÓGICA OPERACIONAL (CORRIGIDA)
     // =========================================================================
     function processOperational() {
+        // Mapear Frota -> Lote
         const frotaLoteMap = new Map(); 
         STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         
@@ -503,11 +513,14 @@
             return lote && STATE.filters.contracts.has(lote);
         };
 
+        // Requisições (Veículos Parados)
         const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
         
+        // Ordens Abertas
         const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
         
+        // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
 
@@ -529,6 +542,7 @@
 
             const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
             
+            // Aplicar Filtro de Contrato na MO
             if (!checkContract(frota)) return;
 
             const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
@@ -552,18 +566,50 @@
         if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico em atividade no momento.</td></tr>';
         else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
+        // KPIs
         let somaDias=0; const hoje=new Date(); ordensAbertas.forEach(o=>{const d=parseDate(o['Data da abertura']); if(d) somaDias+=(hoje-d)/(864e5);});
         const tma = ordensAbertas.length>0?(somaDias/ordensAbertas.length).toFixed(1):0;
-        let totalHH=0, hhCorr=0, hhPrev=0; const idsAbertos=new Set(ordensAbertas.map(o=>o['ID']));
-        const mapTipo=new Map(); ordensAbertas.forEach(o=>mapTipo.set(o['ID'], norm(o['Tipo de manutenção'])));
-        STATE.data.mo.forEach(m=>{ const ref=m['ID_SERV']||m['ID_Ordem']; if(idsAbertos.has(ref)) { const h=calcDuration(m['Hora inicial'], m['Hora final']); totalHH+=h; const t=mapTipo.get(ref)||''; t.includes('CORRETIVA')?hhCorr+=h:hhPrev+=h; }});
+        
+        // --- CÁLCULO DE HH REALIZADO CORRIGIDO ---
+        let totalHH=0, hhCorr=0, hhPrev=0; 
+        const idsAbertos = new Set(ordensAbertas.map(o=>o['ID']));
+        const mapTipo = new Map(); 
+        ordensAbertas.forEach(o => mapTipo.set(o['ID'], norm(o['Tipo de manutenção'])));
+        
+        STATE.data.mo.forEach(m => {
+            // Resolver ID da Ordem (Pode vir de ID_SERV ou ID_Ordem direto)
+            let realOrdId = null;
+            if(m['ID_SERV']) {
+                const s = servMap.get(m['ID_SERV']);
+                if(s) realOrdId = s['ID_Ordem'];
+            } else {
+                realOrdId = m['ID_Ordem'];
+            }
+
+            // Se encontrou ordem e ela está nos filtros (idsAbertos já filtra contrato e status)
+            if(realOrdId && idsAbertos.has(realOrdId)) {
+                const h = calcDuration(m['Hora inicial'], m['Hora final']);
+                if (h > 0) {
+                    totalHH += h;
+                    const t = mapTipo.get(realOrdId) || '';
+                    if(t.includes('CORRETIVA')) hhCorr += h;
+                    else hhPrev += h;
+                }
+            }
+        });
 
         document.getElementById('op-parados').innerText=frotaParada; document.getElementById('op-tma').innerText=tma+'d';
         document.getElementById('op-ordens').innerText=ordensAbertas.length; document.getElementById('op-hh').innerText=totalHH.toFixed(1)+'h';
 
         const tbodyOp=document.querySelector('#tableOp tbody'); tbodyOp.innerHTML='';
         ordensAbertas.forEach(o => {
-            let oHH=0; STATE.data.mo.forEach(m=>{if((m['ID_SERV']||m['ID_Ordem'])===o['ID']) oHH+=calcDuration(m['Hora inicial'], m['Hora final']);});
+            let oHH=0; 
+            STATE.data.mo.forEach(m => {
+                let realOrdId = null;
+                if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } 
+                else { realOrdId = m['ID_Ordem']; }
+                if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
+            });
             tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
         });
         
@@ -608,7 +654,23 @@
         let totalH_KPI = 0;
         const idsCorrIds = new Set(STATE.data.ordem.filter(o => norm(o['Status da ordem'])==='ENCERRADA' && norm(o['Tipo de manutenção']).includes('CORRETIVA') && idsF.has(o['Frota'])).map(o=>o['ID']));
         STATE.data.mo.forEach(m=>{
-            if(idsCorrIds.has(m['ID_SERV']||m['ID_Ordem'])) {
+            // Correção de vínculo também aplicada aqui para segurança
+            let realOrdId = null;
+            if(m['ID_SERV']) {
+                // Necessário buscar serviço se disponível, mas aqui não temos servMap fácil.
+                // Como idsCorrIds é um Set de IDs de ORDEM, se m['ID_Ordem'] existir, usamos.
+                // Se for via ID_SERV, precisaria do mapa. Vamos assumir ID_Ordem direto ou via filtro anterior.
+                // Para manter simples e funcional no gerencial (que foca em ordens fechadas):
+                // A maioria das linhas MO tem ID_Ordem se o sistema exporta corretamente. 
+                // Se depender estritamente de ID_SERV -> ID_Ordem, precisaria recriar o mapa aqui.
+                // Vamos recriar o servMap rápido:
+                const s = STATE.data.serv.find(s => s['ID'] === m['ID_SERV']);
+                if(s) realOrdId = s['ID_Ordem'];
+            } else {
+                realOrdId = m['ID_Ordem'];
+            }
+            
+            if(realOrdId && idsCorrIds.has(realOrdId)) {
                 totalH_KPI += calcDuration(m['Hora inicial'], m['Hora final']);
             }
         });
