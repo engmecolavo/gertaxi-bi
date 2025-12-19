@@ -308,6 +308,10 @@
 </div>
 
 <div id="view-tecnica" class="dashboard-view">
+    <div class="section-title" style="margin-top:0">
+        <span>Análise de Produtividade Mensal</span>
+    </div>
+
     <div class="kpi-row">
         <div class="card" style="border-color: var(--brand)">
             <div class="card-label">Total HH Produzido</div>
@@ -370,7 +374,6 @@
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
-        // Tabela opcional de tecnicos para buscar função
         tec:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
     };
 
@@ -416,6 +419,9 @@
         document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`).classList.add('active');
         document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
         document.getElementById(`view-${mode}`).classList.add('visible');
+        
+        // Resetar filtro principal ao trocar de aba para evitar conflitos
+        STATE.filters.selection = new Set(['Todos']);
         runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
@@ -602,7 +608,7 @@
     }
 
     // =========================================================================
-    // LÓGICA PERFORMANCE TÉCNICA (ATUALIZADA)
+    // LÓGICA PERFORMANCE TÉCNICA (ATUALIZADA COM FILTROS DE CARD E LIMPEZA)
     // =========================================================================
     function initTechnicalView() {
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
@@ -688,7 +694,7 @@
         Object.entries(techStats).forEach(([name, stat]) => {
             const funcao = techFuncMap.get(name) || '-';
 
-            // Filtragem de KPI pelo técnico selecionado no gráfico
+            // Filtragem de KPI pelo técnico selecionado no gráfico (IMPORTANTE)
             if (STATE.filters.selectedTech === null || STATE.filters.selectedTech === name) {
                 totalHH += stat.hh;
                 stat.orders.forEach(o => totalOrdersSet.add(o));
@@ -710,7 +716,7 @@
 
         ranking.sort((a,b) => b.hh - a.hh);
 
-        // Update KPIs
+        // Update KPIs (Os cartões agora refletem a seleção)
         const lblFilter = STATE.filters.selectedTech ? STATE.filters.selectedTech : (STATE.filters.contracts.has('Todos') ? 'Equipe Global' : 'Equipe Filtrada');
         document.getElementById('lbl-kpi-filter').innerText = lblFilter;
         document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
@@ -748,7 +754,7 @@
     }
 
     function selectTech(name) {
-        if (STATE.filters.selectedTech === name) STATE.filters.selectedTech = null; // Toggle off
+        if (STATE.filters.selectedTech === name) STATE.filters.selectedTech = null; // Toggle off if clicked same
         else STATE.filters.selectedTech = name;
         processTechnical();
     }
@@ -794,9 +800,9 @@
                         const idx = el[0].index;
                         selectTech(points[idx].name);
                     } else {
-                        // Clicou no fundo (limpar seleção)
+                        // Clicou no fundo (limpar seleção) -> Implementação solicitada
                         if(STATE.filters.selectedTech) {
-                            selectTech(STATE.filters.selectedTech); // Toggle off logic handles this
+                            selectTech(null); 
                         }
                     }
                 }
@@ -851,6 +857,7 @@
             const tName = (m['Técnico']||'').trim().toUpperCase();
             if(tName === '' || tName === 'ND') return;
             
+            // Se tiver alvo, filtra. Se não tiver, soma todos da equipe.
             if(targetName && tName !== targetName) return;
             
             let ordem = null;
@@ -858,7 +865,7 @@
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                // Verificar filtro de contrato para a equipe
+                // Verificar filtro de contrato para a equipe se necessário
                 if(!targetName && checkContractFunc && !checkContractFunc(ordem['Frota'])) return;
 
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
