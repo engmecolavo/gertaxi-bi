@@ -670,9 +670,6 @@
 
     function resetTechFilters() {
         STATE.filters.techSelected = null;
-        // Reiniciar para data atual ou apenas limpar selecao de tecnico?
-        // O botao está junto dos filtros temporais, então faz sentido resetar tudo (selecao de tecnico)
-        // Mantendo o mês selecionado para não "pular" a visão do usuário, apenas limpa o drill-down
         processTechnical();
     }
 
@@ -758,13 +755,12 @@
         // Atualiza os cartões (KPIs) baseado na seleção atual (ou falta dela)
         updateTechKPIs();
 
-        // Default Evolution logic
+        // Lógica de Evolução Padrão
         if (STATE.filters.techSelected) {
             updateTechEvolution(STATE.filters.techSelected);
-        } else if (ranking.length > 0) {
-            updateTechEvolution(ranking[0].name);
         } else {
-            updateTechEvolution(null);
+            // Se ninguém selecionado, mostra 'Equipe'
+            updateTechEvolution('Equipe');
         }
     }
 
@@ -785,14 +781,13 @@
         }
 
         let totalHH = 0;
-        let totalOrders = 0; // Somatório simples de ordens para os KPIs
+        let totalOrders = 0; 
         
         subset.forEach(r => {
             totalHH += r.hh;
             totalOrders += r.qtd;
         });
 
-        // Se houver seleção, o "count" é 1, se não, é o total de técnicos
         const count = subset.length;
         const avg = totalOrders > 0 ? (totalHH / totalOrders) : 0;
 
@@ -808,7 +803,6 @@
         
         const points = data.map(d => ({ x: d.qtd, y: d.hh, name: d.name }));
         
-        // Colorir o ponto selecionado diferentemente
         const pointColors = points.map(p => p.name === STATE.filters.techSelected ? '#FFF' : '#FFD700');
         const pointRadii = points.map(p => p.name === STATE.filters.techSelected ? 8 : 6);
 
@@ -847,20 +841,15 @@
                         STATE.filters.techSelected = techName;
                         updateTechKPIs();
                         updateTechEvolution(techName);
-                        // Re-renderizar o próprio gráfico para atualizar cores dos pontos
                         chart.data.datasets[0].backgroundColor = points.map(p => p.name === techName ? '#FFF' : '#FFD700');
                         chart.data.datasets[0].pointRadius = points.map(p => p.name === techName ? 8 : 6);
                         chart.update();
                     } else {
-                        // Click no fundo limpo
+                        // Click no fundo limpo -> Mostra Equipe
                         STATE.filters.techSelected = null;
                         updateTechKPIs();
-                        // Resetar evolução (pode voltar pro top 1 ou média, usando lógica do processTechnical)
-                        if (STATE.processed.techRanking.length > 0) {
-                            updateTechEvolution(STATE.processed.techRanking[0].name);
-                        }
+                        updateTechEvolution('Equipe');
                         
-                        // Resetar cores
                         chart.data.datasets[0].backgroundColor = '#FFD700';
                         chart.data.datasets[0].pointRadius = 6;
                         chart.update();
@@ -910,16 +899,32 @@
 
     function calcTechHHForMonth(name, year, month) {
         let hh = 0;
+        
+        // Setup rápido de contratos para checar permissão dentro da helper (necessário pois pode mudar)
+        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
+        const checkContract = (frota) => {
+            if(STATE.filters.contracts.has('Todos')) return true;
+            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
+        };
+
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         
         STATE.data.mo.forEach(m => {
-            if((m['Técnico']||'').trim().toUpperCase() !== name) return;
+            const tName = (m['Técnico']||'').trim().toUpperCase();
+            
+            // Se não for 'Equipe', filtra pelo nome. Se for 'Equipe', ignora 'ND' ou vazio
+            if(name !== 'Equipe' && tName !== name) return;
+            if(name === 'Equipe' && (tName === 'ND' || tName === '')) return;
+
             let ordem = null;
             if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
+                // Checa Contrato
+                if(!checkContract(ordem['Frota'])) return;
+
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
                     hh += calcDuration(m['Hora inicial'], m['Hora final']);
