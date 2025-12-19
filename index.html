@@ -370,7 +370,7 @@
 
     <div class="split-grid">
         <div class="chart-panel normal-h">
-            <div class="panel-header">Dispersão: Volume (Ordens) x Esforço (HH)</div>
+            <div class="panel-header">Dispersão: Volume (Ordens) x Esforço (HH) - Ano Atual</div>
             <div style="flex:1; position: relative;"><canvas id="chartTechScatter"></canvas></div>
         </div>
         
@@ -683,7 +683,9 @@
             const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
         };
 
-        const techStats = {}; 
+        const techStatsMonth = {}; // Dados restritos ao Mês (Para Tabela e KPIs)
+        const techStatsYear = {};  // Dados do Ano Todo (Para Gráfico de Dispersão)
+
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
 
@@ -697,30 +699,41 @@
 
             if(ordem) {
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
+                if(!dtRef) return;
                 
-                if(dtRef && dtRef.getFullYear() === year && dtRef.getMonth() === month) {
-                    if(checkContract(ordem['Frota'])) {
-                        if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
-                        
-                        const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                if(checkContract(ordem['Frota'])) {
+                    const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                    
+                    if(dtRef.getFullYear() === year) {
+                        // === Preenchimento para Dispersão (Ano Inteiro) ===
+                        if(!techStatsYear[techName]) techStatsYear[techName] = { hh: 0, orders: new Set() };
                         if(duration > 0) {
-                            techStats[techName].hh += duration;
-                            techStats[techName].orders.add(ordem['ID']);
-                            techStats[techName].days.add(dtRef.toDateString()); 
+                            techStatsYear[techName].hh += duration;
+                            techStatsYear[techName].orders.add(ordem['ID']);
+                        }
+
+                        // === Preenchimento para Tabela/KPIs (Mês Específico) ===
+                        if(dtRef.getMonth() === month) {
+                            if(!techStatsMonth[techName]) techStatsMonth[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                            if(duration > 0) {
+                                techStatsMonth[techName].hh += duration;
+                                techStatsMonth[techName].orders.add(ordem['ID']);
+                                techStatsMonth[techName].days.add(dtRef.toDateString()); 
+                            }
                         }
                     }
                 }
             }
         });
 
-        const ranking = [];
-
-        Object.entries(techStats).forEach(([name, stat]) => {
+        // 1. Processar Ranking Mensal (Tabela)
+        const rankingMonth = [];
+        Object.entries(techStatsMonth).forEach(([name, stat]) => {
             const possibleHours = (stat.days.size * 8) || 1; 
             let occup = (stat.hh / possibleHours) * 100;
             if(occup > 100) occup = 100;
 
-            ranking.push({
+            rankingMonth.push({
                 name: name,
                 hh: stat.hh,
                 qtd: stat.orders.size,
@@ -728,14 +741,23 @@
                 occup: occup
             });
         });
+        rankingMonth.sort((a,b) => b.hh - a.hh); 
+        STATE.processed.techRanking = rankingMonth; 
 
-        ranking.sort((a,b) => b.hh - a.hh); 
-        STATE.processed.techRanking = ranking; // Save for KPI updates
+        // 2. Processar Dados de Dispersão (Anual)
+        const rankingYear = [];
+        Object.entries(techStatsYear).forEach(([name, stat]) => {
+             rankingYear.push({
+                name: name,
+                hh: stat.hh,
+                qtd: stat.orders.size
+            });
+        });
 
-        // Render Table
+        // Render Table (Usa dados do Mês)
         const tbody = document.querySelector('#tableTechRanking tbody');
         tbody.innerHTML = '';
-        ranking.forEach((r, i) => {
+        rankingMonth.forEach((r, i) => {
             const row = `<tr class="clickable-row" onclick="selectTechFromTable('${r.name}')">
                 <td>${i+1}º</td>
                 <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
@@ -750,29 +772,27 @@
             tbody.innerHTML += row;
         });
 
-        renderTechScatter(ranking);
+        // Render Scatter (Usa dados do Ano)
+        renderTechScatter(rankingYear);
         
-        // Atualiza os cartões (KPIs) baseado na seleção atual (ou falta dela)
+        // Atualiza os cartões (KPIs) baseado na seleção atual (Usa dados do Mês)
         updateTechKPIs();
 
-        // Lógica de Evolução Padrão
+        // Lógica de Evolução Padrão (Independente)
         if (STATE.filters.techSelected) {
             updateTechEvolution(STATE.filters.techSelected);
         } else {
-            // Se ninguém selecionado, mostra 'Equipe'
             updateTechEvolution('Equipe');
         }
     }
 
     function selectTechFromTable(name) {
         STATE.filters.techSelected = name;
-        updateTechKPIs();
-        updateTechEvolution(name);
-        renderTechScatter(STATE.processed.techRanking); // Re-render to highlight point
+        processTechnical(); // Re-executa para destacar no gráfico que tem dataset diferente
     }
 
     function updateTechKPIs() {
-        const ranking = STATE.processed.techRanking || [];
+        const ranking = STATE.processed.techRanking || []; // Dados mensais
         const selected = STATE.filters.techSelected;
         
         let subset = ranking;
@@ -839,20 +859,10 @@
                         const idx = el[0].index;
                         const techName = points[idx].name;
                         STATE.filters.techSelected = techName;
-                        updateTechKPIs();
-                        updateTechEvolution(techName);
-                        chart.data.datasets[0].backgroundColor = points.map(p => p.name === techName ? '#FFF' : '#FFD700');
-                        chart.data.datasets[0].pointRadius = points.map(p => p.name === techName ? 8 : 6);
-                        chart.update();
+                        processTechnical(); // Full refresh necessário pois afeta KPIs que usam outro dataset
                     } else {
-                        // Click no fundo limpo -> Mostra Equipe
                         STATE.filters.techSelected = null;
-                        updateTechKPIs();
-                        updateTechEvolution('Equipe');
-                        
-                        chart.data.datasets[0].backgroundColor = '#FFD700';
-                        chart.data.datasets[0].pointRadius = 6;
-                        chart.update();
+                        processTechnical();
                     }
                 }
             }
@@ -900,7 +910,6 @@
     function calcTechHHForMonth(name, year, month) {
         let hh = 0;
         
-        // Setup rápido de contratos para checar permissão dentro da helper (necessário pois pode mudar)
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         const checkContract = (frota) => {
             if(STATE.filters.contracts.has('Todos')) return true;
