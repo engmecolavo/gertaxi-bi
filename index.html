@@ -659,6 +659,7 @@
         
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
+            addOption(selM, 'all', 'Todos'); // Opção adicionada
             ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m, i) => addOption(selM, i, m));
             
             const now = new Date();
@@ -676,7 +677,8 @@
 
     function processTechnical() {
         const year = parseInt(document.getElementById('tech-year').value);
-        const month = parseInt(document.getElementById('tech-month').value);
+        const fM = document.getElementById('tech-month').value;
+        const month = fM === 'all' ? 'all' : parseInt(fM);
         
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         const checkContract = (frota) => {
@@ -699,15 +701,18 @@
             if(ordem) {
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 
-                if(dtRef && dtRef.getFullYear() === year && dtRef.getMonth() === month) {
-                    if(checkContract(ordem['Frota'])) {
-                        if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
-                        
-                        const duration = calcDuration(m['Hora inicial'], m['Hora final']);
-                        if(duration > 0) {
-                            techStats[techName].hh += duration;
-                            techStats[techName].orders.add(ordem['ID']);
-                            techStats[techName].days.add(dtRef.toDateString()); 
+                if(dtRef && dtRef.getFullYear() === year) {
+                     // Filtro de Mês: 'all' ou correspondência exata
+                    if(month === 'all' || dtRef.getMonth() === month) {
+                        if(checkContract(ordem['Frota'])) {
+                            if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                            
+                            const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                            if(duration > 0) {
+                                techStats[techName].hh += duration;
+                                techStats[techName].orders.add(ordem['ID']);
+                                techStats[techName].days.add(dtRef.toDateString()); 
+                            }
                         }
                     }
                 }
