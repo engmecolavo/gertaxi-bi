@@ -115,6 +115,7 @@
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { text-align: left; background: #252525; color: #aaa; padding: 8px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #444; }
         td { border-bottom: 1px solid #333; padding: 8px; vertical-align: middle; }
+        tr.clickable-row:hover { background-color: #333; cursor: pointer; }
         
         .badge { padding: 3px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; display: inline-block;}
         .bg-corr { background: rgba(231, 76, 60, 0.15); color: var(--red); border: 1px solid rgba(231, 76, 60, 0.3); }
@@ -173,6 +174,9 @@
         </div>
         <div class="nav-item" onclick="setMode('gerencial')">
             <span class="material-icons" style="font-size:16px">insights</span> PAINEL GERENCIAL
+        </div>
+        <div class="nav-item" onclick="setMode('tecnica')">
+            <span class="material-icons" style="font-size:16px">trending_up</span> PERFORMANCE TÉCNICA
         </div>
     </div>
 
@@ -333,7 +337,61 @@
             <div class="evol-chart-container"><canvas id="chartMgmtMTTREvol"></canvas></div>
         </div>
     </div>
+</div>
 
+<div id="view-tecnica" class="dashboard-view">
+    <div class="section-title" style="margin-top:0">
+        <span>Análise de Produtividade Mensal</span>
+        <div class="sub-header-controls">
+            <select id="tech-year" onchange="processTechnical()"></select>
+            <select id="tech-month" onchange="processTechnical()"></select>
+        </div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="card" style="border-color: var(--brand)">
+            <div class="card-label">Total HH Produzido</div>
+            <div class="card-value" id="tech-total-hh">0h</div>
+            <div class="card-sub">No período</div>
+        </div>
+        <div class="card" style="border-color: var(--blue)">
+            <div class="card-label">Ordens Entregues</div>
+            <div class="card-value" id="tech-total-ordens">0</div>
+            <div class="card-sub">Manutenções Fechadas</div>
+        </div>
+        <div class="card" style="border-color: var(--green)">
+            <div class="card-label">Produtividade Média</div>
+            <div class="card-value" id="tech-avg-prod">0</div>
+            <div class="card-sub">HH / Ordem</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Técnicos Ativos</div>
+            <div class="card-value" id="tech-count">0</div>
+            <div class="card-sub">Com apropriação</div>
+        </div>
+    </div>
+
+    <div class="split-grid">
+        <div class="chart-panel normal-h">
+            <div class="panel-header">Dispersão: Volume (Ordens) x Esforço (HH)</div>
+            <div style="flex:1; position: relative;"><canvas id="chartTechScatter"></canvas></div>
+        </div>
+        
+        <div class="chart-panel normal-h">
+            <div class="panel-header">Evolução: <span id="tech-evol-name" style="color:var(--text-main); margin-left:5px">Selecione um técnico</span></div>
+            <div style="flex:1; position: relative;"><canvas id="chartTechEvol"></canvas></div>
+        </div>
+    </div>
+
+    <div class="chart-panel normal-h">
+        <div class="panel-header">Ranking de Produtividade (Campeões do Mês)</div>
+        <div class="table-container">
+            <table id="tableTechRanking">
+                <thead><tr><th>Pos</th><th>Técnico</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -354,16 +412,12 @@
     let charts = {};
 
     window.onload = async () => { 
-        // Registrar Plugin Datalabels
         Chart.register(ChartDataLabels);
-
-        // Data formatada com dia da semana
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
         await loadFiles(); 
         
-        // Fechar dropdown ao clicar fora
         document.addEventListener('click', (e) => {
             const container = document.getElementById('main-filter-container');
             if (!container.contains(e.target)) {
@@ -387,7 +441,6 @@
         } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
     }
 
-    // --- UI GERAL ---
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -398,166 +451,97 @@
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
 
-    // --- LÓGICA DO DROPDOWN MULTI-SELEÇÃO ---
-    function toggleFilterMenu() {
-        document.getElementById('filter-options').classList.toggle('show');
-    }
+    function toggleFilterMenu() { document.getElementById('filter-options').classList.toggle('show'); }
 
     function initFilterOptions() {
         const container = document.getElementById('filter-options');
         container.innerHTML = '';
-        
         if (!STATE.data.frota) return;
-        
-        // Obter contratos únicos
         const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
-        
-        // Adicionar opção "Todos"
         addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
-        
-        // Adicionar cada contrato
         lotes.forEach(l => addCheckboxOption(container, l, l, false));
-        
         updateFilterButtonLabel();
     }
 
     function addCheckboxOption(container, value, label, isChecked) {
         const item = document.createElement('div');
         item.className = 'dropdown-item';
-        item.onclick = (e) => {
-            if(e.target.tagName !== 'INPUT') {
-                const chk = item.querySelector('input');
-                chk.checked = !chk.checked;
-                handleCheckboxChange(chk);
-            }
-        };
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = value;
-        checkbox.checked = isChecked;
+        item.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const chk = item.querySelector('input'); chk.checked = !chk.checked; handleCheckboxChange(chk); } };
+        const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = value; checkbox.checked = isChecked;
         if(isChecked) STATE.filters.contracts.add(value);
-        
         checkbox.onchange = () => handleCheckboxChange(checkbox);
-        
-        const text = document.createElement('span');
-        text.innerText = label;
-        
-        item.appendChild(checkbox);
-        item.appendChild(text);
-        container.appendChild(item);
+        const text = document.createElement('span'); text.innerText = label;
+        item.appendChild(checkbox); item.appendChild(text); container.appendChild(item);
     }
 
     function handleCheckboxChange(changedChk) {
         const val = changedChk.value;
         const allChk = document.querySelectorAll('#filter-options input[type="checkbox"]');
-        
         if (val === 'Todos') {
-            // Se clicou em Todos, desmarca os outros
             if(changedChk.checked) {
                 allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
-                STATE.filters.contracts.clear();
-                STATE.filters.contracts.add('Todos');
-            } else {
-                // Se desmarcou Todos, não faz nada (tem que ter pelo menos um)
-                 if(STATE.filters.contracts.size === 1) changedChk.checked = true;
-            }
+                STATE.filters.contracts.clear(); STATE.filters.contracts.add('Todos');
+            } else { if(STATE.filters.contracts.size === 1) changedChk.checked = true; }
         } else {
-            // Se clicou em um contrato específico
             if(changedChk.checked) {
-                // Remove 'Todos' se estiver marcado
                 const chkTodos = document.querySelector('input[value="Todos"]');
-                if(chkTodos && chkTodos.checked) {
-                    chkTodos.checked = false;
-                    STATE.filters.contracts.delete('Todos');
-                }
+                if(chkTodos && chkTodos.checked) { chkTodos.checked = false; STATE.filters.contracts.delete('Todos'); }
                 STATE.filters.contracts.add(val);
             } else {
                 STATE.filters.contracts.delete(val);
-                // Se desmarcou tudo, volta para 'Todos'
                 if(STATE.filters.contracts.size === 0) {
                     const chkTodos = document.querySelector('input[value="Todos"]');
                     if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
                 }
             }
         }
-        updateFilterButtonLabel();
-        runDashboardLogic();
+        updateFilterButtonLabel(); runDashboardLogic();
     }
 
     function updateFilterButtonLabel() {
         const lbl = document.getElementById('filter-text');
-        if(STATE.filters.contracts.has('Todos')) {
-            lbl.innerText = 'Todos os Contratos';
-        } else {
-            const count = STATE.filters.contracts.size;
-            lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`;
-        }
+        if(STATE.filters.contracts.has('Todos')) lbl.innerText = 'Todos os Contratos';
+        else { const count = STATE.filters.contracts.size; lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`; }
     }
 
     function runDashboardLogic() { 
-        STATE.mode === 'operacional' ? processOperational() : processManagerial(); 
+        if (STATE.mode === 'operacional') processOperational();
+        else if (STATE.mode === 'gerencial') processManagerial();
+        else if (STATE.mode === 'tecnica') initTechnicalView();
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL (CORRIGIDA)
+    // LÓGICA OPERACIONAL
     // =========================================================================
     function processOperational() {
-        // Mapear Frota -> Lote
-        const frotaLoteMap = new Map(); 
-        STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        
+        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         const checkContract = (frota) => {
             if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota);
-            return lote && STATE.filters.contracts.has(lote);
+            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
         };
 
-        // Requisições (Veículos Parados)
         const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
-        
-        // Ordens Abertas
         const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
-        
-        // --- LÓGICA TÉCNICOS EM ATIVIDADE ---
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
-        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
-
-        const moAtivos = STATE.data.mo.filter(m => {
-            const hIni = m['Hora inicial'];
-            const hFim = m['Hora final'];
-            return (hIni && hIni.trim() !== '') && (!hFim || hFim.trim() === '');
-        });
+        const moAtivos = STATE.data.mo.filter(m => { const hIni = m['Hora inicial']; const hFim = m['Hora final']; return (hIni && hIni.trim() !== '') && (!hFim || hFim.trim() === ''); });
 
         const moTabelaDados = [];
-        
         moAtivos.forEach(m => {
-            const idServ = m['ID_SERV'];
-            const idOrdemRef = m['ID_Ordem'];
-            
             let serv = null, ordem = null;
-            if(idServ) { serv = servMap.get(idServ); if(serv) ordem = ordemMap.get(serv['ID_Ordem']); }
-            else if(idOrdemRef) { ordem = ordemMap.get(idOrdemRef); }
-
-            const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
+            if(m['ID_SERV']) { serv = servMap.get(m['ID_SERV']); if(serv) ordem = STATE.data.ordem.find(o => o['ID'] === serv['ID_Ordem']); }
+            else if(m['ID_Ordem']) { ordem = STATE.data.ordem.find(o => o['ID'] === m['ID_Ordem']); }
             
-            // Aplicar Filtro de Contrato na MO
+            const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
             if (!checkContract(frota)) return;
 
-            const numOrdem = ordem ? ordem['Nº Ordem'] : 'N/A';
-            const fName = frota || 'N/A';
-            const tipoManut = ordem ? ordem['Tipo de manutenção'] : 'N/A';
-            const natureza = serv ? (serv['Natureza do serviço'] || '-') : '-';
-            const nomeServico = serv ? (serv['Tipo de serviço'] || serv['Serviço']) : (m['Serviço'] || 'Mão de Obra Geral');
-
             moTabelaDados.push({ 
-                numOrdem, 
+                numOrdem: ordem ? ordem['Nº Ordem'] : 'N/A', 
                 tecnico: m['Técnico']||'ND', 
-                frota: fName, 
-                tipoManut, 
-                natureza: natureza,
-                tipoServ: nomeServico, 
+                frota: frota || 'N/A', 
+                tipoManut: ordem ? ordem['Tipo de manutenção'] : 'N/A', 
+                natureza: serv ? (serv['Natureza do serviço'] || '-') : '-',
+                tipoServ: serv ? (serv['Tipo de serviço'] || serv['Serviço']) : (m['Serviço'] || 'Mão de Obra Geral'), 
                 inicio: m['Hora inicial'] 
             });
         });
@@ -566,35 +550,19 @@
         if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico em atividade no momento.</td></tr>';
         else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
-        // KPIs
         let somaDias=0; const hoje=new Date(); ordensAbertas.forEach(o=>{const d=parseDate(o['Data da abertura']); if(d) somaDias+=(hoje-d)/(864e5);});
         const tma = ordensAbertas.length>0?(somaDias/ordensAbertas.length).toFixed(1):0;
         
-        // --- CÁLCULO DE HH REALIZADO CORRIGIDO ---
         let totalHH=0, hhCorr=0, hhPrev=0; 
         const idsAbertos = new Set(ordensAbertas.map(o=>o['ID']));
-        const mapTipo = new Map(); 
-        ordensAbertas.forEach(o => mapTipo.set(o['ID'], norm(o['Tipo de manutenção'])));
+        const mapTipo = new Map(); ordensAbertas.forEach(o => mapTipo.set(o['ID'], norm(o['Tipo de manutenção'])));
         
         STATE.data.mo.forEach(m => {
-            // Resolver ID da Ordem (Pode vir de ID_SERV ou ID_Ordem direto)
             let realOrdId = null;
-            if(m['ID_SERV']) {
-                const s = servMap.get(m['ID_SERV']);
-                if(s) realOrdId = s['ID_Ordem'];
-            } else {
-                realOrdId = m['ID_Ordem'];
-            }
-
-            // Se encontrou ordem e ela está nos filtros (idsAbertos já filtra contrato e status)
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
             if(realOrdId && idsAbertos.has(realOrdId)) {
                 const h = calcDuration(m['Hora inicial'], m['Hora final']);
-                if (h > 0) {
-                    totalHH += h;
-                    const t = mapTipo.get(realOrdId) || '';
-                    if(t.includes('CORRETIVA')) hhCorr += h;
-                    else hhPrev += h;
-                }
+                if (h > 0) { totalHH += h; const t = mapTipo.get(realOrdId) || ''; if(t.includes('CORRETIVA')) hhCorr += h; else hhPrev += h; }
             }
         });
 
@@ -606,14 +574,11 @@
             let oHH=0; 
             STATE.data.mo.forEach(m => {
                 let realOrdId = null;
-                if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } 
-                else { realOrdId = m['ID_Ordem']; }
+                if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
                 if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
             });
             tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
         });
-        
-        // Renderizar com Rótulos de Dados
         renderDoughnutWithLabels('chartOpType', ['Corretiva', 'Preventiva'], [hhCorr, hhPrev], ['#e74c3c', '#3498db']);
     }
 
@@ -638,10 +603,7 @@
         STATE.processed.centralData = servsCorretivos.map(s => {
             const ordem = ordemMap.get(s['ID_Ordem']);
             const dt = parseDate(ordem['Data da abertura']);
-            return {
-                data: dt, year: dt ? dt.getFullYear() : 0, month: dt ? dt.getMonth() : 0,
-                natureza: s['Natureza do serviço'] || 'Outros', tipo: s['Tipo de serviço'] || s['Serviço'] || 'N/A'
-            };
+            return { data: dt, year: dt ? dt.getFullYear() : 0, month: dt ? dt.getMonth() : 0, natureza: s['Natureza do serviço'] || 'Outros', tipo: s['Tipo de serviço'] || s['Serviço'] || 'N/A' };
         });
         setupCentralFilters(); updateCentralCharts();
 
@@ -654,25 +616,9 @@
         let totalH_KPI = 0;
         const idsCorrIds = new Set(STATE.data.ordem.filter(o => norm(o['Status da ordem'])==='ENCERRADA' && norm(o['Tipo de manutenção']).includes('CORRETIVA') && idsF.has(o['Frota'])).map(o=>o['ID']));
         STATE.data.mo.forEach(m=>{
-            // Correção de vínculo também aplicada aqui para segurança
             let realOrdId = null;
-            if(m['ID_SERV']) {
-                // Necessário buscar serviço se disponível, mas aqui não temos servMap fácil.
-                // Como idsCorrIds é um Set de IDs de ORDEM, se m['ID_Ordem'] existir, usamos.
-                // Se for via ID_SERV, precisaria do mapa. Vamos assumir ID_Ordem direto ou via filtro anterior.
-                // Para manter simples e funcional no gerencial (que foca em ordens fechadas):
-                // A maioria das linhas MO tem ID_Ordem se o sistema exporta corretamente. 
-                // Se depender estritamente de ID_SERV -> ID_Ordem, precisaria recriar o mapa aqui.
-                // Vamos recriar o servMap rápido:
-                const s = STATE.data.serv.find(s => s['ID'] === m['ID_SERV']);
-                if(s) realOrdId = s['ID_Ordem'];
-            } else {
-                realOrdId = m['ID_Ordem'];
-            }
-            
-            if(realOrdId && idsCorrIds.has(realOrdId)) {
-                totalH_KPI += calcDuration(m['Hora inicial'], m['Hora final']);
-            }
+            if(m['ID_SERV']) { const s = STATE.data.serv.find(s => s['ID'] === m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+            if(realOrdId && idsCorrIds.has(realOrdId)) totalH_KPI += calcDuration(m['Hora inicial'], m['Hora final']);
         });
         const qtdOrdensCorr = idsCorrIds.size;
         const mttrKPI = qtdOrdensCorr > 0 ? (totalH_KPI / qtdOrdensCorr).toFixed(1) : 0;
@@ -686,6 +632,257 @@
         document.getElementById('mgmt-mttr-kpi').innerText = mttrKPI + 'h';
     }
 
+    // =========================================================================
+    // LÓGICA PERFORMANCE TÉCNICA (NOVA)
+    // =========================================================================
+    function initTechnicalView() {
+        const years = [...new Set(STATE.data.mo.map(m => {
+            // Tenta pegar data da ordem se possível, ou usa um campo de data em MO se existir (não existe padrão, usaremos a ordem)
+            // Para simplificar, vamos pegar todos os anos disponíveis nas Ordens encerradas
+            return 2024; // Placeholder se não conseguir extrair, mas vamos tentar extrair no processTechnical
+        }))];
+        // Vamos preencher os filtros com base nos dados de MO cruzados com Ordem
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+        const allDates = [];
+        STATE.data.mo.forEach(m => {
+            let o = null;
+            if(m['ID_SERV']) { const s = STATE.data.serv.find(s => s['ID'] === m['ID_SERV']); if(s) o = ordemMap.get(s['ID_Ordem']); }
+            else { o = ordemMap.get(m['ID_Ordem']); }
+            if(o) { const d = parseDate(o['Data da abertura']); if(d) allDates.push(d); }
+        });
+        
+        const uniqueYears = [...new Set(allDates.map(d => d.getFullYear()))].sort().reverse();
+        const selY = document.getElementById('tech-year');
+        const selM = document.getElementById('tech-month');
+        
+        if(selY.options.length === 0) {
+            uniqueYears.forEach(y => addOption(selY, y, y));
+            ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m, i) => addOption(selM, i, m));
+            
+            // Default to current date
+            const now = new Date();
+            if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
+            selM.value = now.getMonth();
+        }
+        
+        processTechnical();
+    }
+
+    function processTechnical() {
+        const year = parseInt(document.getElementById('tech-year').value);
+        const month = parseInt(document.getElementById('tech-month').value);
+        
+        // Mapear contratos
+        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
+        const checkContract = (frota) => {
+            if(STATE.filters.contracts.has('Todos')) return true;
+            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
+        };
+
+        // Agregadores
+        const techStats = {}; // { Nome: { hh: 0, orders: Set(id), days: Set(dateStr) } }
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+        const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
+
+        // Processar MO
+        STATE.data.mo.forEach(m => {
+            const techName = (m['Técnico'] || 'ND').trim().toUpperCase();
+            if(techName === 'ND' || techName === '') return;
+
+            // Encontrar Ordem
+            let ordem = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
+            else { ordem = ordemMap.get(m['ID_Ordem']); }
+
+            if(ordem) {
+                // Filtro de Data (Baseado na Data de Abertura da Ordem ou da MO?)
+                // Performance mensal geralmente olha para quando o trabalho foi feito.
+                // Mas a tabela MO tem Hora Inicial/Final mas não DATA explícita em todas as colunas CSV padrão.
+                // Vamos usar a Data de Fechamento da Ordem (se encerrada) ou Abertura para aproximar.
+                // Idealmente MO teria data. Vamos assumir a data da Ordem para o filtro.
+                const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
+                
+                if(dtRef && dtRef.getFullYear() === year && dtRef.getMonth() === month) {
+                    if(checkContract(ordem['Frota'])) {
+                        if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                        
+                        const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                        if(duration > 0) {
+                            techStats[techName].hh += duration;
+                            techStats[techName].orders.add(ordem['ID']);
+                            // Estimativa de dias trabalhados baseada na data da ordem (imperfeito mas funcional sem data na MO)
+                            techStats[techName].days.add(dtRef.toDateString()); 
+                        }
+                    }
+                }
+            }
+        });
+
+        // Calcular KPIs e Array para Tabela
+        let totalHH = 0;
+        let totalOrders = new Set();
+        const ranking = [];
+
+        Object.entries(techStats).forEach(([name, stat]) => {
+            totalHH += stat.hh;
+            stat.orders.forEach(o => totalOrders.add(o));
+            
+            // Estimativa de Ocupação: HH / (Dias * 8h)
+            const possibleHours = (stat.days.size * 8) || 1; 
+            let occup = (stat.hh / possibleHours) * 100;
+            if(occup > 100) occup = 100; // Cap
+
+            ranking.push({
+                name: name,
+                hh: stat.hh,
+                qtd: stat.orders.size,
+                avg: stat.orders.size > 0 ? (stat.hh / stat.orders.size) : 0,
+                occup: occup
+            });
+        });
+
+        ranking.sort((a,b) => b.hh - a.hh); // Sort by HH
+
+        // Update KPIs
+        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
+        document.getElementById('tech-total-ordens').innerText = totalOrders.size;
+        document.getElementById('tech-avg-prod').innerText = totalOrders.size > 0 ? (totalHH / totalOrders.size).toFixed(1) : '0';
+        document.getElementById('tech-count').innerText = ranking.length;
+
+        // Render Table
+        const tbody = document.querySelector('#tableTechRanking tbody');
+        tbody.innerHTML = '';
+        ranking.forEach((r, i) => {
+            const row = `<tr class="clickable-row" onclick="updateTechEvolution('${r.name}')">
+                <td>${i+1}º</td>
+                <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
+                <td>${r.qtd}</td>
+                <td>${r.hh.toFixed(1)}h</td>
+                <td>${r.avg.toFixed(1)}h</td>
+                <td><div style="background:#333; width:60px; height:6px; border-radius:3px; display:inline-block; margin-right:5px">
+                    <div style="width:${r.occup}%; background:${r.occup>80?'#2ecc71':(r.occup>50?'#f1c40f':'#e74c3c')}; height:100%; border-radius:3px"></div>
+                    </div> ${Math.round(r.occup)}%
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+
+        renderTechScatter(ranking);
+        
+        // Default Evolution: Top 1 or Global Average if empty
+        if(ranking.length > 0) updateTechEvolution(ranking[0].name);
+        else updateTechEvolution(null);
+    }
+
+    function renderTechScatter(data) {
+        const ctx = document.getElementById('chartTechScatter').getContext('2d');
+        if(charts['techScatter']) charts['techScatter'].destroy();
+        
+        const points = data.map(d => ({ x: d.qtd, y: d.hh, name: d.name }));
+        
+        charts['techScatter'] = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Técnicos',
+                    data: points,
+                    backgroundColor: '#FFD700',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h em ' + ctx.raw.x + ' ordens';
+                            }
+                        }
+                    },
+                    datalabels: { display: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Qtd Ordens', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
+                    y: { title: { display: true, text: 'Horas (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
+                },
+                onClick: (e, el) => {
+                    if(el.length > 0) {
+                        const idx = el[0].index;
+                        updateTechEvolution(points[idx].name);
+                    }
+                }
+            }
+        });
+    }
+
+    function updateTechEvolution(techName) {
+        if(!techName) return;
+        document.getElementById('tech-evol-name').innerText = techName;
+        
+        // Calcular historico ultimos 6 meses para este tecnico
+        // Simplificado: Iterar sobre os dados globais novamente ou ter pre-processado.
+        // Vamos iterar rapido.
+        const monthsData = [];
+        const labels = [];
+        const now = new Date(); // Usar data selecionada como referencia seria melhor, mas vamos usar Now - 5 meses
+        
+        for(let i=5; i>=0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            labels.push(d.toLocaleString('default', { month: 'short' }));
+            monthsData.push(calcTechHHForMonth(techName, d.getFullYear(), d.getMonth()));
+        }
+
+        const ctx = document.getElementById('chartTechEvol').getContext('2d');
+        if(charts['techEvol']) charts['techEvol'].destroy();
+        
+        charts['techEvol'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'HH Produzido',
+                    data: monthsData,
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, datalabels: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } }
+            }
+        });
+    }
+
+    function calcTechHHForMonth(name, year, month) {
+        // Funcao auxiliar rapida. Em producao, processariamos tudo uma vez so.
+        let hh = 0;
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+        const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
+        
+        STATE.data.mo.forEach(m => {
+            if((m['Técnico']||'').trim().toUpperCase() !== name) return;
+            let ordem = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
+            else { ordem = ordemMap.get(m['ID_Ordem']); }
+            
+            if(ordem) {
+                const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
+                if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
+                    hh += calcDuration(m['Hora inicial'], m['Hora final']);
+                }
+            }
+        });
+        return hh;
+    }
+
+    // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
+    // Funções auxiliares (parseDate, calcDuration, etc)
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -803,25 +1000,24 @@
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const dataByYear = {};
-        
         STATE.data.mo.forEach(m => {
-            const idServ = m['ID_SERV']; const idOrdemRef = m['ID_Ordem'];
-            let serv = null, ordem = null;
-            if(idServ) { serv = servMap.get(idServ); if(serv) ordem = ordemMap.get(serv['ID_Ordem']); } else if(idOrdemRef) { ordem = ordemMap.get(idOrdemRef); }
-
-            if(ordem) {
-                const isCorrective = norm(ordem['Tipo de manutenção']).includes('CORRETIVA');
-                const isEncerrada = norm(ordem['Status da ordem']) === 'ENCERRADA';
-                const isFrotaOk = idsF.has(ordem['Frota']);
-                
-                if(isCorrective && isEncerrada && isFrotaOk) {
-                    const dt = parseDate(ordem['Data da abertura']);
-                    if(dt) {
-                        const y = dt.getFullYear(); const mes = dt.getMonth();
-                        const duration = calcDuration(m['Hora inicial'], m['Hora final']);
-                        const natureza = (serv ? serv['Natureza do serviço'] : null) || 'GERAL';
-                        if(!dataByYear[y]) dataByYear[y] = [];
-                        dataByYear[y].push({ natureza: natureza, mes: mes, hours: duration, id_ordem: ordem['ID'] });
+            let realOrdId = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+            if(realOrdId) {
+                const ordem = ordemMap.get(realOrdId);
+                if(ordem) {
+                    const isCorrective = norm(ordem['Tipo de manutenção']).includes('CORRETIVA');
+                    const isEncerrada = norm(ordem['Status da ordem']) === 'ENCERRADA';
+                    const isFrotaOk = idsF.has(ordem['Frota']);
+                    if(isCorrective && isEncerrada && isFrotaOk) {
+                        const dt = parseDate(ordem['Data da abertura']);
+                        if(dt) {
+                            const y = dt.getFullYear(); const mes = dt.getMonth();
+                            const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                            const natureza = (servMap.get(m['ID_SERV']) ? servMap.get(m['ID_SERV'])['Natureza do serviço'] : null) || 'GERAL';
+                            if(!dataByYear[y]) dataByYear[y] = [];
+                            dataByYear[y].push({ natureza: natureza, mes: mes, hours: duration, id_ordem: ordem['ID'] });
+                        }
                     }
                 }
             }
@@ -841,17 +1037,14 @@
         const year = document.getElementById('mttr-year').value;
         const rawList = STATE.processed.mttrData[year] || [];
         const natGrouping = {}; 
-        
         rawList.forEach(item => {
             if(!natGrouping[item.natureza]) natGrouping[item.natureza] = { hours: 0, orders: new Set() };
             natGrouping[item.natureza].hours += item.hours;
             natGrouping[item.natureza].orders.add(item.id_ordem);
         });
-
         const chartData = Object.entries(natGrouping)
             .map(([nat, s]) => ({ natureza: nat, mttr: s.orders.size > 0 ? (s.hours / s.orders.size) : 0 }))
             .sort((a,b) => b.mttr - a.mttr);
-
         renderMTTRRankingChart(chartData);
         renderMTTREvolChart(rawList);
     }
