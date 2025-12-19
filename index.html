@@ -80,7 +80,7 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
             gap: 15px; margin-bottom: 20px; 
         }
-        .card { background: var(--bg-panel); padding: 15px; border-radius: 6px; border-left: 4px solid var(--brand); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .card { background: var(--bg-panel); padding: 15px; border-radius: 6px; border-left: 4px solid var(--brand); box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s ease; }
         .card-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
         .card-value { font-size: 24px; font-weight: 700; margin-top: 5px; word-break: break-all; }
         .card-sub { font-size: 10px; opacity: 0.7; margin-top: 2px; }
@@ -103,7 +103,7 @@
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
 
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; min-height: 42px;}
         
         .table-container { height: 100%; overflow-y: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
@@ -157,6 +157,7 @@
             .chart-panel.normal-h { min-height: 300px; }
             .chart-panel.compact { min-height: 280px; }
             .dashboard-view { padding: 10px; }
+            .panel-header { flex-direction: column; align-items: flex-start; gap:10px; }
         }
     </style>
 </head>
@@ -342,10 +343,6 @@
 <div id="view-tecnica" class="dashboard-view">
     <div class="section-title" style="margin-top:0">
         <span>Análise de Produtividade Mensal</span>
-        <div class="sub-header-controls">
-            <select id="tech-year" onchange="processTechnical()"></select>
-            <select id="tech-month" onchange="processTechnical()"></select>
-        </div>
     </div>
 
     <div class="kpi-row">
@@ -384,7 +381,14 @@
     </div>
 
     <div class="chart-panel normal-h">
-        <div class="panel-header">Ranking de Produtividade (Campeões do Mês)</div>
+        <div class="panel-header">
+            <span>Ranking de Produtividade (Campeões do Mês)</span>
+            <div class="sub-header-controls">
+                <select id="tech-year" onchange="processTechnical()"></select>
+                <select id="tech-month" onchange="processTechnical()"></select>
+                <button class="btn-clear" onclick="resetTechFilters()">Limpar</button>
+            </div>
+        </div>
         <div class="table-container">
             <table id="tableTechRanking">
                 <thead><tr><th>Pos</th><th>Técnico</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
@@ -406,8 +410,8 @@
     const STATE = { 
         mode: 'operacional', 
         data: {}, 
-        filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null },
-        processed: { centralData: [], mkbfData: {}, mttrData: {} }
+        filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
+        processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
     };
     let charts = {};
 
@@ -637,11 +641,8 @@
     // =========================================================================
     function initTechnicalView() {
         const years = [...new Set(STATE.data.mo.map(m => {
-            // Tenta pegar data da ordem se possível, ou usa um campo de data em MO se existir (não existe padrão, usaremos a ordem)
-            // Para simplificar, vamos pegar todos os anos disponíveis nas Ordens encerradas
-            return 2024; // Placeholder se não conseguir extrair, mas vamos tentar extrair no processTechnical
+            return 2024; 
         }))];
-        // Vamos preencher os filtros com base nos dados de MO cruzados com Ordem
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const allDates = [];
         STATE.data.mo.forEach(m => {
@@ -659,7 +660,6 @@
             uniqueYears.forEach(y => addOption(selY, y, y));
             ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m, i) => addOption(selM, i, m));
             
-            // Default to current date
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
             selM.value = now.getMonth();
@@ -668,38 +668,37 @@
         processTechnical();
     }
 
+    function resetTechFilters() {
+        STATE.filters.techSelected = null;
+        // Reiniciar para data atual ou apenas limpar selecao de tecnico?
+        // O botao está junto dos filtros temporais, então faz sentido resetar tudo (selecao de tecnico)
+        // Mantendo o mês selecionado para não "pular" a visão do usuário, apenas limpa o drill-down
+        processTechnical();
+    }
+
     function processTechnical() {
         const year = parseInt(document.getElementById('tech-year').value);
         const month = parseInt(document.getElementById('tech-month').value);
         
-        // Mapear contratos
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         const checkContract = (frota) => {
             if(STATE.filters.contracts.has('Todos')) return true;
             const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
         };
 
-        // Agregadores
-        const techStats = {}; // { Nome: { hh: 0, orders: Set(id), days: Set(dateStr) } }
+        const techStats = {}; 
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
 
-        // Processar MO
         STATE.data.mo.forEach(m => {
             const techName = (m['Técnico'] || 'ND').trim().toUpperCase();
             if(techName === 'ND' || techName === '') return;
 
-            // Encontrar Ordem
             let ordem = null;
             if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
             else { ordem = ordemMap.get(m['ID_Ordem']); }
 
             if(ordem) {
-                // Filtro de Data (Baseado na Data de Abertura da Ordem ou da MO?)
-                // Performance mensal geralmente olha para quando o trabalho foi feito.
-                // Mas a tabela MO tem Hora Inicial/Final mas não DATA explícita em todas as colunas CSV padrão.
-                // Vamos usar a Data de Fechamento da Ordem (se encerrada) ou Abertura para aproximar.
-                // Idealmente MO teria data. Vamos assumir a data da Ordem para o filtro.
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 
                 if(dtRef && dtRef.getFullYear() === year && dtRef.getMonth() === month) {
@@ -710,7 +709,6 @@
                         if(duration > 0) {
                             techStats[techName].hh += duration;
                             techStats[techName].orders.add(ordem['ID']);
-                            // Estimativa de dias trabalhados baseada na data da ordem (imperfeito mas funcional sem data na MO)
                             techStats[techName].days.add(dtRef.toDateString()); 
                         }
                     }
@@ -718,19 +716,12 @@
             }
         });
 
-        // Calcular KPIs e Array para Tabela
-        let totalHH = 0;
-        let totalOrders = new Set();
         const ranking = [];
 
         Object.entries(techStats).forEach(([name, stat]) => {
-            totalHH += stat.hh;
-            stat.orders.forEach(o => totalOrders.add(o));
-            
-            // Estimativa de Ocupação: HH / (Dias * 8h)
             const possibleHours = (stat.days.size * 8) || 1; 
             let occup = (stat.hh / possibleHours) * 100;
-            if(occup > 100) occup = 100; // Cap
+            if(occup > 100) occup = 100;
 
             ranking.push({
                 name: name,
@@ -741,19 +732,14 @@
             });
         });
 
-        ranking.sort((a,b) => b.hh - a.hh); // Sort by HH
-
-        // Update KPIs
-        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
-        document.getElementById('tech-total-ordens').innerText = totalOrders.size;
-        document.getElementById('tech-avg-prod').innerText = totalOrders.size > 0 ? (totalHH / totalOrders.size).toFixed(1) : '0';
-        document.getElementById('tech-count').innerText = ranking.length;
+        ranking.sort((a,b) => b.hh - a.hh); 
+        STATE.processed.techRanking = ranking; // Save for KPI updates
 
         // Render Table
         const tbody = document.querySelector('#tableTechRanking tbody');
         tbody.innerHTML = '';
         ranking.forEach((r, i) => {
-            const row = `<tr class="clickable-row" onclick="updateTechEvolution('${r.name}')">
+            const row = `<tr class="clickable-row" onclick="selectTechFromTable('${r.name}')">
                 <td>${i+1}º</td>
                 <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
                 <td>${r.qtd}</td>
@@ -769,9 +755,51 @@
 
         renderTechScatter(ranking);
         
-        // Default Evolution: Top 1 or Global Average if empty
-        if(ranking.length > 0) updateTechEvolution(ranking[0].name);
-        else updateTechEvolution(null);
+        // Atualiza os cartões (KPIs) baseado na seleção atual (ou falta dela)
+        updateTechKPIs();
+
+        // Default Evolution logic
+        if (STATE.filters.techSelected) {
+            updateTechEvolution(STATE.filters.techSelected);
+        } else if (ranking.length > 0) {
+            updateTechEvolution(ranking[0].name);
+        } else {
+            updateTechEvolution(null);
+        }
+    }
+
+    function selectTechFromTable(name) {
+        STATE.filters.techSelected = name;
+        updateTechKPIs();
+        updateTechEvolution(name);
+        renderTechScatter(STATE.processed.techRanking); // Re-render to highlight point
+    }
+
+    function updateTechKPIs() {
+        const ranking = STATE.processed.techRanking || [];
+        const selected = STATE.filters.techSelected;
+        
+        let subset = ranking;
+        if (selected) {
+            subset = ranking.filter(r => r.name === selected);
+        }
+
+        let totalHH = 0;
+        let totalOrders = 0; // Somatório simples de ordens para os KPIs
+        
+        subset.forEach(r => {
+            totalHH += r.hh;
+            totalOrders += r.qtd;
+        });
+
+        // Se houver seleção, o "count" é 1, se não, é o total de técnicos
+        const count = subset.length;
+        const avg = totalOrders > 0 ? (totalHH / totalOrders) : 0;
+
+        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
+        document.getElementById('tech-total-ordens').innerText = totalOrders;
+        document.getElementById('tech-avg-prod').innerText = avg.toFixed(1);
+        document.getElementById('tech-count').innerText = count;
     }
 
     function renderTechScatter(data) {
@@ -780,15 +808,19 @@
         
         const points = data.map(d => ({ x: d.qtd, y: d.hh, name: d.name }));
         
+        // Colorir o ponto selecionado diferentemente
+        const pointColors = points.map(p => p.name === STATE.filters.techSelected ? '#FFF' : '#FFD700');
+        const pointRadii = points.map(p => p.name === STATE.filters.techSelected ? 8 : 6);
+
         charts['techScatter'] = new Chart(ctx, {
             type: 'scatter',
             data: {
                 datasets: [{
                     label: 'Técnicos',
                     data: points,
-                    backgroundColor: '#FFD700',
-                    pointRadius: 6,
-                    pointHoverRadius: 8
+                    backgroundColor: pointColors,
+                    pointRadius: pointRadii,
+                    pointHoverRadius: 9
                 }]
             },
             options: {
@@ -808,10 +840,30 @@
                     x: { title: { display: true, text: 'Qtd Ordens', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
                     y: { title: { display: true, text: 'Horas (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
                 },
-                onClick: (e, el) => {
+                onClick: (e, el, chart) => {
                     if(el.length > 0) {
                         const idx = el[0].index;
-                        updateTechEvolution(points[idx].name);
+                        const techName = points[idx].name;
+                        STATE.filters.techSelected = techName;
+                        updateTechKPIs();
+                        updateTechEvolution(techName);
+                        // Re-renderizar o próprio gráfico para atualizar cores dos pontos
+                        chart.data.datasets[0].backgroundColor = points.map(p => p.name === techName ? '#FFF' : '#FFD700');
+                        chart.data.datasets[0].pointRadius = points.map(p => p.name === techName ? 8 : 6);
+                        chart.update();
+                    } else {
+                        // Click no fundo limpo
+                        STATE.filters.techSelected = null;
+                        updateTechKPIs();
+                        // Resetar evolução (pode voltar pro top 1 ou média, usando lógica do processTechnical)
+                        if (STATE.processed.techRanking.length > 0) {
+                            updateTechEvolution(STATE.processed.techRanking[0].name);
+                        }
+                        
+                        // Resetar cores
+                        chart.data.datasets[0].backgroundColor = '#FFD700';
+                        chart.data.datasets[0].pointRadius = 6;
+                        chart.update();
                     }
                 }
             }
@@ -822,12 +874,9 @@
         if(!techName) return;
         document.getElementById('tech-evol-name').innerText = techName;
         
-        // Calcular historico ultimos 6 meses para este tecnico
-        // Simplificado: Iterar sobre os dados globais novamente ou ter pre-processado.
-        // Vamos iterar rapido.
         const monthsData = [];
         const labels = [];
-        const now = new Date(); // Usar data selecionada como referencia seria melhor, mas vamos usar Now - 5 meses
+        const now = new Date(); 
         
         for(let i=5; i>=0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -860,7 +909,6 @@
     }
 
     function calcTechHHForMonth(name, year, month) {
-        // Funcao auxiliar rapida. Em producao, processariamos tudo uma vez so.
         let hh = 0;
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
@@ -882,7 +930,6 @@
     }
 
     // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
-    // Funções auxiliares (parseDate, calcDuration, etc)
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -1134,7 +1181,6 @@
         });
     }
 
-    // Função de Rosca COM Datalabels para o painel operacional
     function renderDoughnutWithLabels(id, l, d, c) {
         const ctx = document.getElementById(id).getContext('2d');
         if(charts[id]) charts[id].destroy();
