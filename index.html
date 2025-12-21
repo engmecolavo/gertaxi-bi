@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI 1.1 | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.2 | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -25,7 +25,7 @@
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 
-        /* TELA DE LOGIN (NOVO 1.1) */
+        /* TELA DE LOGIN */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -51,7 +51,7 @@
         .btn-login:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; }
         #login-msg { color: var(--red); font-size: 12px; margin-top: 15px; min-height: 15px; }
 
-        /* HEADER (Sticky Desktop) */
+        /* HEADER */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
             min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
@@ -70,11 +70,24 @@
         }
         .nav-item.active { background: var(--brand); color: #000; }
         .nav-item:hover:not(.active) { color: var(--brand); border-color: #444; }
-        /* Classe para ocultar itens via permissão */
         .nav-item.hidden { display: none !important; }
 
-        /* FILTROS & DROPDOWN */
+        /* FILTROS & INFO USER */
         .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
+        
+        /* User Info Area + Logout */
+        .user-info-wrapper {
+            display: flex; align-items: center; gap: 10px; margin-right: 10px; 
+            border-right: 1px solid #333; padding-right: 10px;
+        }
+        .user-info-display { font-size: 11px; color: #666; text-align: right; }
+        .btn-logout {
+            background: #252525; border: 1px solid #444; color: var(--red); 
+            padding: 6px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .btn-logout:hover { background: #333; border-color: var(--red); }
+
         .custom-dropdown { position: relative; width: 200px; font-size: 13px; font-weight: 500; }
         .dropdown-btn {
             background: #333; border: 1px solid #555; color: #fff; padding: 8px 12px; border-radius: 4px; 
@@ -95,9 +108,6 @@
         }
         .dropdown-item:hover { background: #333; color: #fff; }
         .dropdown-item input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: var(--brand); }
-
-        /* USER INFO (NOVO) */
-        .user-info-display { font-size: 11px; color: #666; margin-right: 10px; text-align: right; }
 
         /* KPI & CHARTS */
         .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
@@ -141,9 +151,15 @@
             header { position: relative; top: auto; justify-content: space-between; padding: 10px; }
             .logo-area { width: auto; order: 1; margin-bottom: 0; font-size: 18px; }
             .logo-area .material-icons { font-size: 24px; }
-            .filter-bar { order: 2; width: auto; justify-content: flex-end; }
-            .custom-dropdown { width: 160px; }
+            
+            /* Ajuste para filtro e user info */
+            .filter-bar { order: 2; width: auto; justify-content: flex-end; gap: 5px; }
+            .user-info-wrapper { margin-right: 5px; padding-right: 5px; }
+            .user-info-display { display: none; } /* Oculta nome no mobile pra ganhar espaço */
+            
+            .custom-dropdown { width: 140px; }
             .dropdown-btn { padding: 6px 8px; font-size: 11px; }
+            
             .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; }
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
             .mobile-hide { display: none; }
@@ -165,7 +181,7 @@
             <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
             GERTÁXI BI
         </div>
-        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.1 - Acesso Restrito</div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.2 - Acesso Restrito</div>
         
         <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
         <input type="password" id="login-pass" class="login-input" placeholder="Senha">
@@ -194,10 +210,16 @@
     </div>
 
     <div class="filter-bar">
-        <div class="user-info-display">
-            <div id="user-name-display" style="font-weight:bold; color:#fff;"></div>
-            <div id="user-role-display" style="font-size:9px; color:var(--brand);"></div>
+        <div class="user-info-wrapper">
+            <div class="user-info-display">
+                <div id="user-name-display" style="font-weight:bold; color:#fff;"></div>
+                <div id="user-role-display" style="font-size:9px; color:var(--brand);"></div>
+            </div>
+            <button class="btn-logout" onclick="logout()" title="Sair / Logout">
+                <span class="material-icons" style="font-size:18px;">logout</span>
+            </button>
         </div>
+
         <div class="custom-dropdown" id="main-filter-container">
             <div class="dropdown-btn" onclick="toggleFilterMenu()">
                 <span id="filter-text">Carregando...</span>
@@ -418,12 +440,13 @@
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
-        // NOVO 1.1: Tabela de Usuários
+        
+        // --- ATENÇÃO: SUBSTITUA O LINK ABAIXO PELO SEU LINK CORRETO DOS USUÁRIOS (GERADO NO PASSO ANTERIOR) ---
         users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1961394362&single=true&output=csv'
     };
 
     const STATE = { 
-        mode: null, // Será definido no login
+        mode: null,
         data: {}, 
         currentUser: null,
         filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
@@ -436,15 +459,16 @@
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
-        // Carrega dados. O login permanece visível bloqueando a tela.
         await loadFiles();
         
-        // Habilita botão de login após carregar
+        // --- LÓGICA DE PERSISTÊNCIA 1.2 ---
+        checkSession(); // Verifica se já existe login salvo
+
+        // Habilita botão de login
         const btn = document.getElementById('btn-login');
         btn.disabled = false;
         btn.innerText = 'ACESSAR';
 
-        // Event listener para fechar dropdown
         document.addEventListener('click', (e) => {
             const container = document.getElementById('main-filter-container');
             if (container && !container.contains(e.target)) {
@@ -455,7 +479,6 @@
 
         initFilterOptions(); 
         
-        // Listener para tecla Enter no login
         document.getElementById('login-pass').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') attemptLogin();
         });
@@ -469,14 +492,28 @@
                 const sep = txt.split('\n')[0].includes(';') ? ';' : ',';
                 STATE.data[key] = Papa.parse(txt, { header: true, delimiter: sep, skipEmptyLines: true, transformHeader: h=>h.trim() }).data;
             });
-            // Não iniciamos a lógica do dashboard aqui. Esperamos o login.
         } catch (e) { 
             console.error(e); 
             document.getElementById('login-msg').innerText = "Erro de conexão com a base de dados.";
         }
     }
 
-    // --- LÓGICA DE LOGIN (NOVO 1.1) ---
+    // --- NOVA FUNÇÃO DE VERIFICAÇÃO DE SESSÃO ---
+    function checkSession() {
+        const savedUser = localStorage.getItem('gertaxi_user');
+        if (savedUser) {
+            try {
+                STATE.currentUser = JSON.parse(savedUser);
+                applyPermissions(STATE.currentUser.role);
+                updateUserDisplay();
+                document.getElementById('login-overlay').style.display = 'none';
+            } catch (e) {
+                console.log("Erro ao recuperar sessão, forçando login.");
+                localStorage.removeItem('gertaxi_user');
+            }
+        }
+    }
+
     function attemptLogin() {
         const emailInput = document.getElementById('login-email').value.trim();
         const passInput = document.getElementById('login-pass').value.trim();
@@ -487,8 +524,6 @@
             return;
         }
 
-        // Busca usuário (Case insensitive para email, sensitive para senha se quiser, aqui fiz simples)
-        // Colunas CSV: Email, Senha, Nome, Permissão
         const user = STATE.data.users.find(u => 
             u['Email'] && u['Email'].trim().toLowerCase() === emailInput.toLowerCase() &&
             u['Senha'] && u['Senha'].trim() === passInput
@@ -497,20 +532,18 @@
         if (user) {
             STATE.currentUser = {
                 name: user['Nome'],
-                role: user['Permissão'] ? user['Permissão'].trim() : 'Técnico' // Default seguro
+                role: user['Permissão'] ? user['Permissão'].trim() : 'Técnico'
             };
             
-            applyPermissions(STATE.currentUser.role);
-            
-            // Exibe info do usuário
-            document.getElementById('user-name-display').innerText = STATE.currentUser.name;
-            document.getElementById('user-role-display').innerText = STATE.currentUser.role.toUpperCase();
+            // --- SALVAR NO LOCALSTORAGE ---
+            localStorage.setItem('gertaxi_user', JSON.stringify(STATE.currentUser));
 
-            // Remove overlay e inicia
+            applyPermissions(STATE.currentUser.role);
+            updateUserDisplay();
+
             document.getElementById('login-overlay').style.display = 'none';
         } else {
             msg.innerText = "Usuário ou senha incorretos.";
-            // Animação de erro
             const box = document.querySelector('.login-box');
             box.style.transform = "translateX(5px)";
             setTimeout(() => box.style.transform = "translateX(-5px)", 100);
@@ -518,26 +551,29 @@
         }
     }
 
+    function logout() {
+        localStorage.removeItem('gertaxi_user');
+        location.reload(); // Recarrega a página para voltar ao login
+    }
+
+    function updateUserDisplay() {
+        document.getElementById('user-name-display').innerText = STATE.currentUser.name;
+        document.getElementById('user-role-display').innerText = STATE.currentUser.role.toUpperCase();
+    }
+
     function applyPermissions(role) {
-        // IDs dos botões de navegação: nav-operacional, nav-gerencial, nav-tecnica
         const navOp = document.getElementById('nav-operacional');
         const navGer = document.getElementById('nav-gerencial');
         const navTec = document.getElementById('nav-tecnica');
 
-        // Reset
         navOp.classList.remove('hidden');
         navGer.classList.remove('hidden');
         navTec.classList.remove('hidden');
 
-        // Lógica
-        // Admin: Vê as 3 telas (Nenhum hidden)
-        // Analista: Vê painel Operacional e Indicadores (Técnica hidden)
-        // Técnico: Vê somente painel Operacional (Gerencial e Técnica hidden)
-
         const r = role.toLowerCase();
 
         if (r === 'admin') {
-            setMode('operacional'); // Default inicial
+            setMode('operacional'); 
         } 
         else if (r === 'analista') {
             navTec.classList.add('hidden');
@@ -546,19 +582,14 @@
         else if (r === 'técnico' || r === 'tecnico') {
             navGer.classList.add('hidden');
             navTec.classList.add('hidden');
-            // Como só tem uma aba, podemos esconder a barra de navegação inteira se quisermos, 
-            // mas vou manter o botão "Operacional" visível para confirmar onde ele está.
             setMode('operacional');
         } 
         else {
-            // Role desconhecida, fallback para Técnico (mais restrito)
             navGer.classList.add('hidden');
             navTec.classList.add('hidden');
             setMode('operacional');
         }
     }
-
-    // --- FIM LÓGICA LOGIN ---
 
     function setMode(mode) {
         STATE.mode = mode;
@@ -779,7 +810,7 @@
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
             addOption(selM, 'all', 'Todos'); 
-            ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
+            ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m, i) => addOption(selM, i, m));
             
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
@@ -1333,4 +1364,3 @@
 </script>
 </body>
 </html>
-
