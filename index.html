@@ -73,20 +73,21 @@
         .nav-item.hidden { display: none !important; }
 
         /* FILTROS & INFO USER */
-        .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
+        .filter-bar { display: flex; align-items: center; gap: 15px; flex-grow: 1; justify-content: flex-end; position: relative; }
         
         /* User Info Area + Logout */
         .user-info-wrapper {
-            display: flex; align-items: center; gap: 10px; margin-right: 10px; 
-            border-right: 1px solid #333; padding-right: 10px;
+            display: flex; align-items: center; gap: 10px; 
+            padding-left: 10px; border-left: 1px solid #333; /* Separador sutil à esquerda */
         }
         .user-info-display { font-size: 11px; color: #666; text-align: right; }
+        
         .btn-logout {
-            background: #252525; border: 1px solid #444; color: var(--red); 
+            background: #252525; border: 1px solid #555; color: #fff; /* BOTÃO BRANCO */
             padding: 6px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
             transition: 0.2s;
         }
-        .btn-logout:hover { background: #333; border-color: var(--red); }
+        .btn-logout:hover { background: #333; border-color: #fff; transform: scale(1.05); }
 
         .custom-dropdown { position: relative; width: 200px; font-size: 13px; font-weight: 500; }
         .dropdown-btn {
@@ -154,7 +155,7 @@
             
             /* Ajuste para filtro e user info */
             .filter-bar { order: 2; width: auto; justify-content: flex-end; gap: 5px; }
-            .user-info-wrapper { margin-right: 5px; padding-right: 5px; }
+            .user-info-wrapper { padding-left: 5px; border-left: 1px solid #444; }
             .user-info-display { display: none; } /* Oculta nome no mobile pra ganhar espaço */
             
             .custom-dropdown { width: 140px; }
@@ -210,6 +211,15 @@
     </div>
 
     <div class="filter-bar">
+        <div class="custom-dropdown" id="main-filter-container">
+            <div class="dropdown-btn" onclick="toggleFilterMenu()">
+                <span id="filter-text">Carregando...</span>
+                <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
+            </div>
+            <div class="dropdown-content" id="filter-options">
+            </div>
+        </div>
+
         <div class="user-info-wrapper">
             <div class="user-info-display">
                 <div id="user-name-display" style="font-weight:bold; color:#fff;"></div>
@@ -218,15 +228,6 @@
             <button class="btn-logout" onclick="logout()" title="Sair / Logout">
                 <span class="material-icons" style="font-size:18px;">logout</span>
             </button>
-        </div>
-
-        <div class="custom-dropdown" id="main-filter-container">
-            <div class="dropdown-btn" onclick="toggleFilterMenu()">
-                <span id="filter-text">Carregando...</span>
-                <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
-            </div>
-            <div class="dropdown-content" id="filter-options">
-            </div>
         </div>
     </div>
 </header>
@@ -441,8 +442,9 @@
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
         
-        // --- ATENÇÃO: SUBSTITUA O LINK ABAIXO PELO SEU LINK CORRETO DOS USUÁRIOS (GERADO NO PASSO ANTERIOR) ---
-        users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1961394362&single=true&output=csv'
+        // --- ATENÇÃO: NÃO ESQUEÇA DE INSERIR O LINK CORRETO DA PLANILHA DE LOGIN AQUI ---
+        // (Use o link CSV da aba que contém as colunas: Email, Senha, Nome, Permissão)
+        users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv' 
     };
 
     const STATE = { 
@@ -461,10 +463,8 @@
         
         await loadFiles();
         
-        // --- LÓGICA DE PERSISTÊNCIA 1.2 ---
-        checkSession(); // Verifica se já existe login salvo
+        checkSession(); // Verifica sessão existente
 
-        // Habilita botão de login
         const btn = document.getElementById('btn-login');
         btn.disabled = false;
         btn.innerText = 'ACESSAR';
@@ -498,7 +498,6 @@
         }
     }
 
-    // --- NOVA FUNÇÃO DE VERIFICAÇÃO DE SESSÃO ---
     function checkSession() {
         const savedUser = localStorage.getItem('gertaxi_user');
         if (savedUser) {
@@ -535,7 +534,6 @@
                 role: user['Permissão'] ? user['Permissão'].trim() : 'Técnico'
             };
             
-            // --- SALVAR NO LOCALSTORAGE ---
             localStorage.setItem('gertaxi_user', JSON.stringify(STATE.currentUser));
 
             applyPermissions(STATE.currentUser.role);
@@ -553,7 +551,7 @@
 
     function logout() {
         localStorage.removeItem('gertaxi_user');
-        location.reload(); // Recarrega a página para voltar ao login
+        location.reload(); 
     }
 
     function updateUserDisplay() {
@@ -810,7 +808,8 @@
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
             addOption(selM, 'all', 'Todos'); 
-            ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m, i) => addOption(selM, i, m));
+            // 3. MÊSES ABREVIADOS RESTAURADOS
+            ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
             
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
@@ -1068,6 +1067,7 @@
         return hh;
     }
 
+    // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
