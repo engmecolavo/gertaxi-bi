@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI 1.3 | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.4 | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -184,7 +184,7 @@
             <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
             GERTÁXI BI
         </div>
-        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.3 - Acesso Restrito</div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.4 - Acesso Restrito</div>
         
         <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
         <input type="password" id="login-pass" class="login-input" placeholder="Senha">
@@ -501,7 +501,7 @@
         });
 
         initFilterOptions(); 
-        // Inicializa o filtro de Base também
+        // Inicializa o filtro de Base
         initBaseFilterOptions();
         
         document.getElementById('login-pass').addEventListener('keypress', function (e) {
@@ -625,12 +625,14 @@
         const mainFilter = document.getElementById('main-filter-container');
         const baseFilter = document.getElementById('base-filter-container');
 
-        if (mode === 'tecnica') {
-            mainFilter.classList.add('d-none');
-            baseFilter.classList.remove('d-none');
-        } else {
+        if (mode === 'gerencial') {
+            // Gerencial vê Contrato
             mainFilter.classList.remove('d-none');
             baseFilter.classList.add('d-none');
+        } else {
+            // Operacional e Técnica veem Base
+            mainFilter.classList.add('d-none');
+            baseFilter.classList.remove('d-none');
         }
         
         runDashboardLogic();
@@ -656,13 +658,13 @@
         updateFilterButtonLabel('contracts');
     }
 
-    // --- NOVO: FILTRO DE BASES (Técnico) ---
+    // --- NOVO: FILTRO DE BASES ---
     function initBaseFilterOptions() {
         const container = document.getElementById('filter-options-base');
         container.innerHTML = '';
         if (!STATE.data.tecnicos) return;
         
-        // Busca coluna "Base de execução" ou "Base"
+        // Busca coluna "Base de execução" ou "Base" na tabela TECNICOS (para listar opções)
         const bases = [...new Set(STATE.data.tecnicos.map(t => t['Base de execução'] || t['Base']).filter(b => b && b.trim() !== ''))].sort();
         
         addCheckboxOption(container, 'Todos', 'Todas as Bases', true, 'bases');
@@ -685,7 +687,6 @@
 
     function handleCheckboxChange(changedChk, type) {
         const val = changedChk.value;
-        // Seleciona o container correto baseado no tipo
         const containerId = type === 'contracts' ? 'filter-options-main' : 'filter-options-base';
         const allChk = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
         
@@ -730,18 +731,38 @@
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL (Mantém filtro de CONTRATO)
+    // LÓGICA OPERACIONAL (AGORA USA BASE DINÂMICA DA FROTA)
     // =========================================================================
     function processOperational() {
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
-        };
+        
+        // --- MAPEAMENTO: FROTA -> BASE (Coluna Dinâmica) ---
+        const frotaBaseMap = new Map();
+        if(STATE.data.frota) {
+            STATE.data.frota.forEach(f => {
+                // A coluna deve se chamar "Base" no CSV da Frota
+                const veiculo = f['FROTA'] || f['Frota']; 
+                const base = f['Base'] || ''; 
+                if(veiculo) frotaBaseMap.set(veiculo, base.trim());
+            });
+        }
 
-        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
+        const checkBase = (veiculo) => {
+            if(STATE.filters.bases.has('Todos')) return true;
+            const baseDin = frotaBaseMap.get(veiculo);
+            // Se o veículo não tem base (está rodando), não mostramos se filtro específico estiver ativo?
+            // A regra "do contrário retorna vazio" implica que só interessa quem tem ordem aberta.
+            // Se baseDin for vazio, checkBase retorna false (exceto se for "Todos"? Não, se for vazio não bate com filtro de base especifica)
+            return baseDin && STATE.filters.bases.has(baseDin);
+        };
+        // -----------------------------------------------------
+
+        // Reqs Abertas (Veiculos Parados)
+        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkBase(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
-        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
+        
+        // Ordens Abertas (Fila)
+        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkBase(o['Frota']));
+        
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const moAtivos = STATE.data.mo.filter(m => { const hIni = m['Hora inicial']; const hFim = m['Hora final']; return (hIni && hIni.trim() !== '') && (!hFim || hFim.trim() === ''); });
 
@@ -752,7 +773,7 @@
             else if(m['ID_Ordem']) { ordem = STATE.data.ordem.find(o => o['ID'] === m['ID_Ordem']); }
             
             const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
-            if (!checkContract(frota)) return;
+            if (!checkBase(frota)) return; // Usa checkBase
 
             moTabelaDados.push({ 
                 numOrdem: ordem ? ordem['Nº Ordem'] : 'N/A', 
