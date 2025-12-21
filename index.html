@@ -28,10 +28,14 @@
         /* HEADER - FIXO (CONGELADO) */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
-            min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
+            min-height: 60px; display: flex; align-items: center; justify-content: space-between; 
             padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); 
+            
             /* Fixação */
-            position: sticky; top: 0; z-index: 1000; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            
             flex-wrap: wrap; gap: 10px;
         }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; white-space: nowrap; }
@@ -84,19 +88,27 @@
         .split-grid { display: grid; grid-template-columns: 3fr 7fr; gap: 20px; margin-bottom: 20px; align-items: start; }
         .full-width { grid-column: span 2; } 
         
-        .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; }
+        /* Ajuste no chart-panel para evitar estouro */
+        .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; overflow: hidden; }
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
 
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; }
         
-        /* Ajuste de tabela para permitir scroll horizontal no mobile */
-        .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; }
+        /* Table Container com Scroll Horizontal para Mobile */
+        .table-container { 
+            height: 100%; 
+            overflow-y: auto; 
+            overflow-x: auto; /* Permite scroll horizontal */
+            max-height: 340px; 
+            width: 100%;
+        }
+        
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
         /* TABELAS */
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; /* Garante largura mínima para scroll */ }
         th { text-align: left; background: #252525; color: #aaa; padding: 8px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #444; }
         td { border-bottom: 1px solid #333; padding: 8px; vertical-align: middle; }
         tr.clickable-row:hover { background-color: #333; cursor: pointer; transition: 0.2s; }
@@ -105,7 +117,8 @@
         .badge { padding: 3px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; display: inline-block;}
         .bg-corr { background: rgba(231, 76, 60, 0.15); color: var(--red); border: 1px solid rgba(231, 76, 60, 0.3); }
         .bg-prev { background: rgba(52, 152, 219, 0.15); color: var(--blue); border: 1px solid rgba(52, 152, 219, 0.3); }
-        
+        .bg-start { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
+
         /* Controles Internos */
         .sub-header-controls { display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; width: auto; }
         .sub-header-controls select { background:#333; color:#fff; border:1px solid #555; padding:6px; border-radius:4px; font-size:11px; }
@@ -117,27 +130,34 @@
         .dashboard-view.visible { display: block; }
         @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= RESPONSIVIDADE MOBILE ================= */
+        /* ================= RESPONSIVIDADE ================= */
         @media (max-width: 900px) {
-            header { justify-content: center; padding-bottom: 15px; }
-            .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
+            /* Header Compacto */
+            header { justify-content: center; padding-bottom: 10px; }
+            .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; font-size: 18px; }
             
-            /* Ajuste Barra de Rolagem Nav Pills */
+            /* Nav Pills Mobile: Linha única com nomes curtos */
             .nav-pills { 
-                order: 2; width: 100%; justify-content: flex-start; margin-bottom: 5px; 
-                overflow-x: auto; white-space: nowrap; /* Rolagem Horizontal Restaurada */
+                order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; 
+                flex-wrap: nowrap; /* Força ficar na mesma linha */
             }
             .nav-item { 
-                flex: 0 0 auto; /* Tamanho natural */
-                padding: 8px 16px; font-size: 11px; text-align: center; 
+                flex: 1; 
+                justify-content: center; 
+                padding: 8px 2px; 
+                font-size: 10px; 
+                text-align: center; 
             }
+            
+            /* Esconder partes do texto no mobile */
+            .mobile-hide { display: none; }
 
             .filter-bar { order: 3; width: 100%; justify-content: center; }
             .custom-dropdown { width: 100%; max-width: 300px; }
             
-            /* Alinhamento de Grids e Gaps */
+            /* Grid Ajustado */
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
-            .charts-row, .split-grid { grid-template-columns: 1fr; gap: 10px; } /* Gap ajustado para 10px */
+            .charts-row, .split-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
             
             .chart-panel.normal-h { min-height: 300px; }
@@ -156,13 +176,16 @@
     
     <div class="nav-pills">
         <div class="nav-item active" onclick="setMode('operacional')">
-            <span class="material-icons" style="font-size:16px">build</span> PAINEL OPERACIONAL
+            <span class="material-icons" style="font-size:16px">build</span> 
+            <span class="mobile-hide">PAINEL </span>OPERACIONAL
         </div>
         <div class="nav-item" onclick="setMode('gerencial')">
-            <span class="material-icons" style="font-size:16px">pie_chart</span> GESTÃO DE INDICADORES
+            <span class="material-icons" style="font-size:16px">pie_chart</span> 
+            <span class="mobile-hide">GESTÃO DE </span>INDICADORES
         </div>
         <div class="nav-item" onclick="setMode('tecnica')">
-            <span class="material-icons" style="font-size:16px">trending_up</span> PERFORMANCE TÉCNICA
+            <span class="material-icons" style="font-size:16px">trending_up</span> 
+            PERFORMANCE<span class="mobile-hide"> TÉCNICA</span>
         </div>
     </div>
 
@@ -325,17 +348,20 @@
 </div>
 
 <div id="view-tecnica" class="dashboard-view">
-    
+    <div class="section-title" style="margin-top:0">
+        <span>Análise de Produtividade Mensal</span>
+    </div>
+
     <div class="kpi-row">
         <div class="card" style="border-color: var(--brand)">
             <div class="card-label">Total HH Produzido</div>
             <div class="card-value" id="tech-total-hh">0h</div>
-            <div class="card-sub">No período</div>
+            <div class="card-sub"><span id="lbl-kpi-filter">Equipe Global</span></div>
         </div>
         <div class="card" style="border-color: var(--blue)">
             <div class="card-label">Ordens Entregues</div>
             <div class="card-value" id="tech-total-ordens">0</div>
-            <div class="card-sub">Manutenções Fechadas</div>
+            <div class="card-sub">Manutenções</div>
         </div>
         <div class="card" style="border-color: var(--green)">
             <div class="card-label">Produtividade Média</div>
@@ -349,10 +375,6 @@
         </div>
     </div>
 
-    <div class="section-title">
-        <span>Análise de Produtividade Mensal</span>
-    </div>
-
     <div class="split-grid">
         <div class="chart-panel normal-h">
             <div class="panel-header">Dispersão: Volume (Ordens) x Esforço (HH)</div>
@@ -360,23 +382,25 @@
         </div>
         
         <div class="chart-panel normal-h">
-            <div class="panel-header">Evolução: <span id="tech-evol-name" style="color:var(--text-main); margin-left:5px">Selecione um técnico</span></div>
+            <div class="panel-header">
+                <span id="tech-evol-name" style="color:var(--text-main)">Evolução da Equipe</span>
+            </div>
             <div style="flex:1; position: relative;"><canvas id="chartTechEvol"></canvas></div>
         </div>
     </div>
 
     <div class="chart-panel normal-h">
         <div class="panel-header">
-            <span>Ranking de Produtividade (Campeões do Mês)</span>
+            <span>Ranking de Produtividade</span>
             <div class="sub-header-controls">
                 <select id="tech-year" onchange="processTechnical()"></select>
                 <select id="tech-month" onchange="processTechnical()"></select>
-                <button class="btn-clear" onclick="resetTechFilters()">Limpar</button>
+                <button class="btn-clear" onclick="resetTechnicalView()">Limpar</button>
             </div>
         </div>
         <div class="table-container">
             <table id="tableTechRanking">
-                <thead><tr><th>Pos</th><th>Técnico</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
+                <thead><tr><th>Pos</th><th>Técnico</th><th>Função</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -389,14 +413,15 @@
         ordem: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=676143752&single=true&output=csv',
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
-        mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv'
+        mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
+        tec:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
     };
 
     const STATE = { 
         mode: 'operacional', 
         data: {}, 
-        filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
-        processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
+        filters: { contracts: new Set(), selectedTech: null, naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null },
+        processed: { centralData: [], mkbfData: {}, mttrData: {} }
     };
     let charts = {};
 
@@ -409,9 +434,7 @@
         
         document.addEventListener('click', (e) => {
             const container = document.getElementById('main-filter-container');
-            if (!container.contains(e.target)) {
-                document.getElementById('filter-options').classList.remove('show');
-            }
+            if (!container.contains(e.target)) document.getElementById('filter-options').classList.remove('show');
         });
 
         initFilterOptions(); 
@@ -436,6 +459,9 @@
         document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`).classList.add('active');
         document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
         document.getElementById(`view-${mode}`).classList.add('visible');
+        
+        // Resetar filtro principal ao trocar de aba para evitar conflitos
+        STATE.filters.contracts = new Set(['Todos']);
         runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
@@ -625,9 +651,6 @@
     // LÓGICA PERFORMANCE TÉCNICA (ATUALIZADA)
     // =========================================================================
     function initTechnicalView() {
-        const years = [...new Set(STATE.data.mo.map(m => {
-            return 2024; 
-        }))];
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const allDates = [];
         STATE.data.mo.forEach(m => {
@@ -643,27 +666,25 @@
         
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
-            addOption(selM, 'all', 'Todos'); // Opção adicionada
-            // MESES ABREVIADOS
             ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
-            
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
             selM.value = now.getMonth();
         }
-        
         processTechnical();
     }
 
-    function resetTechFilters() {
-        STATE.filters.techSelected = null;
+    function resetTechnicalView() {
+        STATE.filters.selectedTech = null;
+        const now = new Date();
+        document.getElementById('tech-year').value = now.getFullYear();
+        document.getElementById('tech-month').value = now.getMonth();
         processTechnical();
     }
 
     function processTechnical() {
         const year = parseInt(document.getElementById('tech-year').value);
-        const fM = document.getElementById('tech-month').value;
-        const month = fM === 'all' ? 'all' : parseInt(fM);
+        const month = parseInt(document.getElementById('tech-month').value);
         
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
         const checkContract = (frota) => {
@@ -671,7 +692,12 @@
             const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
         };
 
-        const techStats = {}; 
+        const techFuncMap = new Map();
+        if(STATE.data.tec) {
+            STATE.data.tec.forEach(t => techFuncMap.set(norm(t['Nome']||t['Técnico']), t['Função'] || '-'));
+        }
+
+        const techStats = {};
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
 
@@ -685,34 +711,40 @@
 
             if(ordem) {
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
-                
-                if(dtRef && dtRef.getFullYear() === year) {
-                     // Filtro de Mês: 'all' ou correspondência exata
-                    if(month === 'all' || dtRef.getMonth() === month) {
-                        if(checkContract(ordem['Frota'])) {
-                            if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
-                            
-                            const duration = calcDuration(m['Hora inicial'], m['Hora final']);
-                            if(duration > 0) {
-                                techStats[techName].hh += duration;
-                                techStats[techName].orders.add(ordem['ID']);
-                                techStats[techName].days.add(dtRef.toDateString()); 
-                            }
+                if(dtRef && dtRef.getFullYear() === year && dtRef.getMonth() === month) {
+                    if(checkContract(ordem['Frota'])) {
+                        if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                        const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                        if(duration > 0) {
+                            techStats[techName].hh += duration;
+                            techStats[techName].orders.add(ordem['ID']);
+                            techStats[techName].days.add(dtRef.toDateString()); 
                         }
                     }
                 }
             }
         });
 
+        let totalHH = 0;
+        let totalOrdersSet = new Set();
         const ranking = [];
 
         Object.entries(techStats).forEach(([name, stat]) => {
+            const funcao = techFuncMap.get(name) || '-';
+
+            // Filtragem de KPI
+            if (STATE.filters.selectedTech === null || STATE.filters.selectedTech === name) {
+                totalHH += stat.hh;
+                stat.orders.forEach(o => totalOrdersSet.add(o));
+            }
+
             const possibleHours = (stat.days.size * 8) || 1; 
             let occup = (stat.hh / possibleHours) * 100;
             if(occup > 100) occup = 100;
 
             ranking.push({
                 name: name,
+                funcao: funcao,
                 hh: stat.hh,
                 qtd: stat.orders.size,
                 avg: stat.orders.size > 0 ? (stat.hh / stat.orders.size) : 0,
@@ -720,16 +752,25 @@
             });
         });
 
-        ranking.sort((a,b) => b.hh - a.hh); 
-        STATE.processed.techRanking = ranking; // Save for KPI updates
+        ranking.sort((a,b) => b.hh - a.hh);
+
+        // Update KPIs
+        const lblFilter = STATE.filters.selectedTech ? STATE.filters.selectedTech : (STATE.filters.contracts.has('Todos') ? 'Equipe Global' : 'Equipe Filtrada');
+        document.getElementById('lbl-kpi-filter').innerText = lblFilter;
+        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
+        document.getElementById('tech-total-ordens').innerText = totalOrdersSet.size;
+        document.getElementById('tech-avg-prod').innerText = totalOrdersSet.size > 0 ? (totalHH / totalOrdersSet.size).toFixed(1) : '0';
+        document.getElementById('tech-count').innerText = STATE.filters.selectedTech ? 1 : ranking.length;
 
         // Render Table
         const tbody = document.querySelector('#tableTechRanking tbody');
         tbody.innerHTML = '';
         ranking.forEach((r, i) => {
-            const row = `<tr class="clickable-row" onclick="selectTechFromTable('${r.name}')">
+            const isSel = r.name === STATE.filters.selectedTech ? 'selected-row' : '';
+            const row = `<tr class="clickable-row ${isSel}" onclick="selectTech('${r.name}')">
                 <td>${i+1}º</td>
                 <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
+                <td style="font-size:11px; color:#aaa">${r.funcao}</td>
                 <td>${r.qtd}</td>
                 <td>${r.hh.toFixed(1)}h</td>
                 <td>${r.avg.toFixed(1)}h</td>
@@ -743,66 +784,36 @@
 
         renderTechScatter(ranking);
         
-        // Atualiza os cartões (KPIs) baseado na seleção atual (ou falta dela)
-        updateTechKPIs();
-
-        // Lógica de Evolução Padrão (Independente)
-        if (STATE.filters.techSelected) {
-            updateTechEvolution(STATE.filters.techSelected);
-        } else {
-            updateTechEvolution('Equipe');
-        }
+        // Evolução: Se tem selecionado, mostra ele. Senão, mostra média da equipe.
+        updateTechEvolution(STATE.filters.selectedTech, checkContract);
     }
 
-    function selectTechFromTable(name) {
-        STATE.filters.techSelected = name;
-        processTechnical(); // Re-executa para destacar no gráfico e recalcular
-    }
-
-    function updateTechKPIs() {
-        const ranking = STATE.processed.techRanking || []; // Dados mensais
-        const selected = STATE.filters.techSelected;
-        
-        let subset = ranking;
-        if (selected) {
-            subset = ranking.filter(r => r.name === selected);
-        }
-
-        let totalHH = 0;
-        let totalOrders = 0; 
-        
-        subset.forEach(r => {
-            totalHH += r.hh;
-            totalOrders += r.qtd;
-        });
-
-        const count = subset.length;
-        const avg = totalOrders > 0 ? (totalHH / totalOrders) : 0;
-
-        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
-        document.getElementById('tech-total-ordens').innerText = totalOrders;
-        document.getElementById('tech-avg-prod').innerText = avg.toFixed(1);
-        document.getElementById('tech-count').innerText = count;
+    function selectTech(name) {
+        if (STATE.filters.selectedTech === name) STATE.filters.selectedTech = null; // Toggle off if clicked same
+        else STATE.filters.selectedTech = name;
+        processTechnical();
     }
 
     function renderTechScatter(data) {
         const ctx = document.getElementById('chartTechScatter').getContext('2d');
         if(charts['techScatter']) charts['techScatter'].destroy();
         
-        const points = data.map(d => ({ x: d.qtd, y: d.hh, name: d.name }));
+        const points = data.map(d => ({ 
+            x: d.qtd, 
+            y: d.hh, 
+            name: d.name,
+            color: (STATE.filters.selectedTech && STATE.filters.selectedTech !== d.name) ? '#444' : '#FFD700' 
+        }));
         
-        const pointColors = points.map(p => p.name === STATE.filters.techSelected ? '#FFF' : '#FFD700');
-        const pointRadii = points.map(p => p.name === STATE.filters.techSelected ? 8 : 6);
-
         charts['techScatter'] = new Chart(ctx, {
             type: 'scatter',
             data: {
                 datasets: [{
                     label: 'Técnicos',
                     data: points,
-                    backgroundColor: pointColors,
-                    pointRadius: pointRadii,
-                    pointHoverRadius: 9
+                    backgroundColor: points.map(p => p.color),
+                    pointRadius: 6,
+                    pointHoverRadius: 8
                 }]
             },
             options: {
@@ -810,45 +821,38 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        callbacks: {
-                            label: function(ctx) {
-                                return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h em ' + ctx.raw.x + ' ordens';
-                            }
-                        }
+                        callbacks: { label: function(ctx) { return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h (' + ctx.raw.x + ' OS)'; } }
                     },
                     datalabels: { display: false }
                 },
                 scales: {
-                    x: { title: { display: true, text: 'Qtd Ordens', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
-                    y: { title: { display: true, text: 'Horas (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
+                    x: { title: { display: true, text: 'Volume (Ordens)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
+                    y: { title: { display: true, text: 'Esforço (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
                 },
-                onClick: (e, el, chart) => {
+                onClick: (e, el) => {
                     if(el.length > 0) {
                         const idx = el[0].index;
-                        const techName = points[idx].name;
-                        STATE.filters.techSelected = techName;
-                        processTechnical(); 
+                        selectTech(points[idx].name);
                     } else {
-                        STATE.filters.techSelected = null;
-                        processTechnical();
+                        if(STATE.filters.selectedTech) selectTech(null); // Click on background clears
                     }
                 }
             }
         });
     }
 
-    function updateTechEvolution(techName) {
-        if(!techName) return;
-        document.getElementById('tech-evol-name').innerText = techName;
+    function updateTechEvolution(techName, checkContractFunc) {
+        const title = techName ? `Evolução: ${techName}` : 'Evolução da Equipe';
+        document.getElementById('tech-evol-name').innerText = title;
         
         const monthsData = [];
         const labels = [];
-        const now = new Date(); 
+        const now = new Date();
         
         for(let i=5; i>=0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             labels.push(d.toLocaleString('default', { month: 'short' }));
-            monthsData.push(calcTechHHForMonth(techName, d.getFullYear(), d.getMonth()));
+            monthsData.push(calcTechHHForMonth(techName, d.getFullYear(), d.getMonth(), checkContractFunc));
         }
 
         const ctx = document.getElementById('chartTechEvol').getContext('2d');
@@ -859,12 +863,11 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'HH Produzido',
+                    label: 'HH Total',
                     data: monthsData,
-                    borderColor: '#2ecc71',
-                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
-                    fill: true,
-                    tension: 0.3
+                    borderColor: techName ? '#2ecc71' : '#3498db',
+                    backgroundColor: techName ? 'rgba(46, 204, 113, 0.1)' : 'rgba(52, 152, 219, 0.1)',
+                    fill: true, tension: 0.3
                 }]
             },
             options: {
@@ -875,32 +878,23 @@
         });
     }
 
-    function calcTechHHForMonth(name, year, month) {
+    function calcTechHHForMonth(targetName, year, month, checkContractFunc) {
         let hh = 0;
-        
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
-        };
-
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         
         STATE.data.mo.forEach(m => {
             const tName = (m['Técnico']||'').trim().toUpperCase();
+            if(tName === '' || tName === 'ND') return;
             
-            // Se não for 'Equipe', filtra pelo nome. Se for 'Equipe', ignora 'ND' ou vazio
-            if(name !== 'Equipe' && tName !== name) return;
-            if(name === 'Equipe' && (tName === 'ND' || tName === '')) return;
-
+            if(targetName && tName !== targetName) return;
+            
             let ordem = null;
             if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                // Checa Contrato
-                if(!checkContract(ordem['Frota'])) return;
+                if(!targetName && checkContractFunc && !checkContractFunc(ordem['Frota'])) return;
 
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
@@ -919,8 +913,7 @@
         let km=0, f=0; Object.values(g).forEach(k => { k.sort((a,b)=>a-b); for(let i=1; i<k.length; i++) { const d=k[i]-k[i-1]; if(d>0&&d<50000){km+=d; f++;} } });
         return f>0 ? km/f : 0;
     }
-    // Funciona como setup e update
-    function setupCentralFilters() { /* Já implementado acima, mantido estrutura */ }
+    function addOption(s,v,t) { const o=document.createElement('option'); o.value=v; o.innerText=t; s.appendChild(o); }
 </script>
 </body>
 </html>
