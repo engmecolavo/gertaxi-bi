@@ -25,15 +25,12 @@
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 
-        /* HEADER (Padrão Desktop: Sticky/Fixo) */
+        /* HEADER (Desktop: Sticky) */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
             min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
             padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 1000; 
-            
-            /* Configuração Sticky para Desktop */
             position: sticky; top: 0; width: 100%;
-            
             flex-wrap: wrap; gap: 10px;
         }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; white-space: nowrap; }
@@ -51,7 +48,7 @@
         /* FILTROS GERAIS & CUSTOM DROPDOWN */
         .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
         
-        /* Estilo do Dropdown Customizado para Multiseleção */
+        /* Estilo do Dropdown */
         .custom-dropdown {
             position: relative;
             width: 200px;
@@ -62,7 +59,13 @@
             background: #333; border: 1px solid #555; color: #fff; 
             padding: 8px 12px; border-radius: 4px; cursor: pointer; 
             display: flex; justify-content: space-between; align-items: center;
+            white-space: nowrap; overflow: hidden;
         }
+        /* Ajuste para texto truncado no botão se ficar muito pequeno */
+        .dropdown-btn span:first-child {
+            text-overflow: ellipsis; overflow: hidden; max-width: 90%;
+        }
+
         .dropdown-content {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
             background: #252525; border: 1px solid #444; border-radius: 4px;
@@ -111,8 +114,6 @@
         
         .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
-
-        /* Container de Altura Fixa para Gráficos de Evolução */
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
         /* TABELAS */
@@ -147,21 +148,52 @@
         .dashboard-view.visible { display: block; }
         @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= RESPONSIVIDADE ================= */
+        /* ================= RESPONSIVIDADE (MOBILE) ================= */
         @media (max-width: 900px) {
             header { 
-                justify-content: center; padding-bottom: 15px;
-                /* Desabilita Sticky no Mobile */
+                /* Desabilita Sticky no Mobile para rolar junto */
                 position: relative; top: auto;
+                /* Espaça Logo (esq) e Filtro (dir) */
+                justify-content: space-between; 
+                padding: 10px;
             }
-            .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
-            .nav-pills { order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; overflow-x: hidden; }
+
+            /* LOGO: Ordem 1 (Esquerda) */
+            .logo-area { 
+                width: auto; /* Tamanho natural */
+                order: 1; 
+                margin-bottom: 0; 
+                font-size: 18px; /* Leve redução para caber */
+            }
+            .logo-area .material-icons { font-size: 24px; }
+
+            /* FILTRO: Ordem 2 (Direita, mesma linha do Logo) */
+            .filter-bar { 
+                order: 2; 
+                width: auto; /* Tamanho natural */
+                justify-content: flex-end;
+            }
+            .custom-dropdown { 
+                width: 160px; /* Reduz largura do dropdown para não quebrar linha */
+            }
+            .dropdown-btn { 
+                padding: 6px 8px; /* Botão mais compacto */
+                font-size: 11px;
+            }
+
+            /* MENU: Ordem 3 (Linha de baixo) */
+            .nav-pills { 
+                order: 3; 
+                width: 100%; /* Força quebra para nova linha */
+                justify-content: space-between; 
+                margin-top: 10px; 
+                overflow-x: hidden; 
+            }
             
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
             .mobile-hide { display: none; }
             
-            .filter-bar { order: 3; width: 100%; justify-content: center; }
-            .custom-dropdown { width: 100%; max-width: 300px; }
+            /* Ajustes gerais de layout mobile */
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
             .charts-row, .split-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
