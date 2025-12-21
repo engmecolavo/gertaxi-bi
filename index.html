@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI 1.2 | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.3 | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -75,15 +75,14 @@
         /* FILTROS & INFO USER */
         .filter-bar { display: flex; align-items: center; gap: 15px; flex-grow: 1; justify-content: flex-end; position: relative; }
         
-        /* User Info Area + Logout */
         .user-info-wrapper {
             display: flex; align-items: center; gap: 10px; 
-            padding-left: 10px; border-left: 1px solid #333; /* Separador sutil à esquerda */
+            padding-left: 10px; border-left: 1px solid #333; 
         }
         .user-info-display { font-size: 11px; color: #666; text-align: right; }
         
         .btn-logout {
-            background: #252525; border: 1px solid #555; color: #fff; /* BOTÃO BRANCO */
+            background: #252525; border: 1px solid #555; color: #fff;
             padding: 6px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
             transition: 0.2s;
         }
@@ -152,15 +151,11 @@
             header { position: relative; top: auto; justify-content: space-between; padding: 10px; }
             .logo-area { width: auto; order: 1; margin-bottom: 0; font-size: 18px; }
             .logo-area .material-icons { font-size: 24px; }
-            
-            /* Ajuste para filtro e user info */
             .filter-bar { order: 2; width: auto; justify-content: flex-end; gap: 5px; }
             .user-info-wrapper { padding-left: 5px; border-left: 1px solid #444; }
-            .user-info-display { display: none; } /* Oculta nome no mobile pra ganhar espaço */
-            
+            .user-info-display { display: none; }
             .custom-dropdown { width: 140px; }
             .dropdown-btn { padding: 6px 8px; font-size: 11px; }
-            
             .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; }
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
             .mobile-hide { display: none; }
@@ -182,7 +177,7 @@
             <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
             GERTÁXI BI
         </div>
-        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.2 - Acesso Restrito</div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.3 - Filtro por Filial</div>
         
         <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
         <input type="password" id="login-pass" class="login-input" placeholder="Senha">
@@ -441,9 +436,6 @@
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
-        
-        // --- ATENÇÃO: NÃO ESQUEÇA DE INSERIR O LINK CORRETO DA PLANILHA DE LOGIN AQUI ---
-        // (Use o link CSV da aba que contém as colunas: Email, Senha, Nome, Permissão)
         users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1961394362&single=true&output=csv' 
     };
 
@@ -451,7 +443,8 @@
         mode: null,
         data: {}, 
         currentUser: null,
-        filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
+        // Agora usamos 'filiais' ao invés de 'contracts'
+        filters: { filiais: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
         processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
     };
     let charts = {};
@@ -462,8 +455,7 @@
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
         await loadFiles();
-        
-        checkSession(); // Verifica sessão existente
+        checkSession(); 
 
         const btn = document.getElementById('btn-login');
         btn.disabled = false;
@@ -535,10 +527,8 @@
             };
             
             localStorage.setItem('gertaxi_user', JSON.stringify(STATE.currentUser));
-
             applyPermissions(STATE.currentUser.role);
             updateUserDisplay();
-
             document.getElementById('login-overlay').style.display = 'none';
         } else {
             msg.innerText = "Usuário ou senha incorretos.";
@@ -570,49 +560,41 @@
 
         const r = role.toLowerCase();
 
-        if (r === 'admin') {
-            setMode('operacional'); 
-        } 
-        else if (r === 'analista') {
-            navTec.classList.add('hidden');
-            setMode('operacional');
-        } 
-        else if (r === 'técnico' || r === 'tecnico') {
-            navGer.classList.add('hidden');
-            navTec.classList.add('hidden');
-            setMode('operacional');
-        } 
-        else {
-            navGer.classList.add('hidden');
-            navTec.classList.add('hidden');
-            setMode('operacional');
-        }
+        if (r === 'admin') { setMode('operacional'); } 
+        else if (r === 'analista') { navTec.classList.add('hidden'); setMode('operacional'); } 
+        else if (r === 'técnico' || r === 'tecnico') { navGer.classList.add('hidden'); navTec.classList.add('hidden'); setMode('operacional'); } 
+        else { navGer.classList.add('hidden'); navTec.classList.add('hidden'); setMode('operacional'); }
     }
 
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        
         const btn = document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`);
         if(btn) btn.classList.add('active');
-        
         document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
         const view = document.getElementById(`view-${mode}`);
         if(view) view.classList.add('visible');
-        
         runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
 
     function toggleFilterMenu() { document.getElementById('filter-options').classList.toggle('show'); }
 
+    // --- NOVA LÓGICA DE FILTRO: BASEADA EM FILIAL E EXCLUINDO DESMOBILIZADOS ---
     function initFilterOptions() {
         const container = document.getElementById('filter-options');
         container.innerHTML = '';
         if (!STATE.data.frota) return;
-        const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
-        addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
-        lotes.forEach(l => addCheckboxOption(container, l, l, false));
+        
+        // Pega Filiais únicas de veículos que NÃO são Desmobilizados
+        const filiais = [...new Set(STATE.data.frota
+            .filter(f => f['LOTE'] !== 'Desmobilizado')
+            .map(f => f['FILIAL'])
+            .filter(b => b && b.trim() !== ''))]
+            .sort();
+            
+        addCheckboxOption(container, 'Todos', 'Todas as Bases', true);
+        filiais.forEach(f => addCheckboxOption(container, f, f, false));
         updateFilterButtonLabel();
     }
 
@@ -621,7 +603,7 @@
         item.className = 'dropdown-item';
         item.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const chk = item.querySelector('input'); chk.checked = !chk.checked; handleCheckboxChange(chk); } };
         const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = value; checkbox.checked = isChecked;
-        if(isChecked) STATE.filters.contracts.add(value);
+        if(isChecked) STATE.filters.filiais.add(value);
         checkbox.onchange = () => handleCheckboxChange(checkbox);
         const text = document.createElement('span'); text.innerText = label;
         item.appendChild(checkbox); item.appendChild(text); container.appendChild(item);
@@ -633,18 +615,18 @@
         if (val === 'Todos') {
             if(changedChk.checked) {
                 allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
-                STATE.filters.contracts.clear(); STATE.filters.contracts.add('Todos');
-            } else { if(STATE.filters.contracts.size === 1) changedChk.checked = true; }
+                STATE.filters.filiais.clear(); STATE.filters.filiais.add('Todos');
+            } else { if(STATE.filters.filiais.size === 1) changedChk.checked = true; }
         } else {
             if(changedChk.checked) {
                 const chkTodos = document.querySelector('input[value="Todos"]');
-                if(chkTodos && chkTodos.checked) { chkTodos.checked = false; STATE.filters.contracts.delete('Todos'); }
-                STATE.filters.contracts.add(val);
+                if(chkTodos && chkTodos.checked) { chkTodos.checked = false; STATE.filters.filiais.delete('Todos'); }
+                STATE.filters.filiais.add(val);
             } else {
-                STATE.filters.contracts.delete(val);
-                if(STATE.filters.contracts.size === 0) {
+                STATE.filters.filiais.delete(val);
+                if(STATE.filters.filiais.size === 0) {
                     const chkTodos = document.querySelector('input[value="Todos"]');
-                    if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
+                    if(chkTodos) { chkTodos.checked = true; STATE.filters.filiais.add('Todos'); }
                 }
             }
         }
@@ -653,8 +635,8 @@
 
     function updateFilterButtonLabel() {
         const lbl = document.getElementById('filter-text');
-        if(STATE.filters.contracts.has('Todos')) lbl.innerText = 'Todos os Contratos';
-        else { const count = STATE.filters.contracts.size; lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`; }
+        if(STATE.filters.filiais.has('Todos')) lbl.innerText = 'Todas as Bases';
+        else { const count = STATE.filters.filiais.size; lbl.innerText = count === 1 ? [...STATE.filters.filiais][0] : `${count} Bases`; }
     }
 
     function runDashboardLogic() { 
@@ -664,18 +646,25 @@
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL
+    // LÓGICA OPERACIONAL (CheckFilial implementado)
     // =========================================================================
     function processOperational() {
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
+        // Mapa Robusto: Chave = Nome Frota -> Valor = Objeto com Filial e Lote
+        const frotaMap = new Map(); 
+        STATE.data.frota.forEach(f => frotaMap.set(f['FROTA'], { FILIAL: f['FILIAL'], LOTE: f['LOTE'] }));
+
+        const checkFilial = (frotaName) => {
+            const vehData = frotaMap.get(frotaName);
+            // 1. Veículo existe? 2. É Desmobilizado?
+            if (!vehData || vehData.LOTE === 'Desmobilizado') return false;
+            // 3. Filtro selecionado
+            if(STATE.filters.filiais.has('Todos')) return true;
+            return STATE.filters.filiais.has(vehData.FILIAL);
         };
 
-        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkContract(r['Frota']));
+        const reqsAbertas = STATE.data.req.filter(r => (norm(r['Status da requisição']) !== 'ENCERRADA' && norm(r['Status da requisição']) !== 'CANCELADA') && checkFilial(r['Frota']));
         const frotaParada = new Set(reqsAbertas.map(r => r['Frota'])).size;
-        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkContract(o['Frota']));
+        const ordensAbertas = STATE.data.ordem.filter(o => norm(o['Status da ordem']) === 'ABERTA' && checkFilial(o['Frota']));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         const moAtivos = STATE.data.mo.filter(m => { const hIni = m['Hora inicial']; const hFim = m['Hora final']; return (hIni && hIni.trim() !== '') && (!hFim || hFim.trim() === ''); });
 
@@ -686,7 +675,7 @@
             else if(m['ID_Ordem']) { ordem = STATE.data.ordem.find(o => o['ID'] === m['ID_Ordem']); }
             
             const frota = ordem ? ordem['Frota'] : (serv ? serv['Frota'] : null);
-            if (!checkContract(frota)) return;
+            if (!checkFilial(frota)) return;
 
             moTabelaDados.push({ 
                 numOrdem: ordem ? ordem['Nº Ordem'] : 'N/A', 
@@ -736,13 +725,15 @@
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL
+    // LÓGICA GERENCIAL (CheckFilial implementado)
     // =========================================================================
     function processManagerial() {
         const frota = STATE.data.frota.filter(f => {
-            const t = norm(f['TIPO']), l = f['LOTE'];
+            const t = norm(f['TIPO']), l = f['LOTE'], filial = f['FILIAL'];
+            // 1. Regras de Negócio (Ignorar Apoio/Equip/Desmobilizado)
             const isValid = !t.includes('APOIO') && !t.includes('EQUIPAMENTO') && l !== 'Desmobilizado';
-            const isSelected = STATE.filters.contracts.has('Todos') || STATE.filters.contracts.has(l);
+            // 2. Regra do Filtro (Filial)
+            const isSelected = STATE.filters.filiais.has('Todos') || STATE.filters.filiais.has(filial);
             return isValid && isSelected;
         });
         const idsF = new Set(frota.map(f => f['FROTA']));
@@ -786,7 +777,7 @@
     }
 
     // =========================================================================
-    // LÓGICA PERFORMANCE TÉCNICA
+    // LÓGICA PERFORMANCE TÉCNICA (CheckFilial implementado)
     // =========================================================================
     function initTechnicalView() {
         const years = [...new Set(STATE.data.mo.map(m => {
@@ -808,7 +799,6 @@
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
             addOption(selM, 'all', 'Todos'); 
-            // 3. MÊSES ABREVIADOS RESTAURADOS
             ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
             
             const now = new Date();
@@ -829,10 +819,14 @@
         const fM = document.getElementById('tech-month').value;
         const month = fM === 'all' ? 'all' : parseInt(fM);
         
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
+        const frotaMap = new Map(); 
+        STATE.data.frota.forEach(f => frotaMap.set(f['FROTA'], { FILIAL: f['FILIAL'], LOTE: f['LOTE'] }));
+
+        const checkFilial = (frotaName) => {
+            const vehData = frotaMap.get(frotaName);
+            if (!vehData || vehData.LOTE === 'Desmobilizado') return false;
+            if(STATE.filters.filiais.has('Todos')) return true;
+            return STATE.filters.filiais.has(vehData.FILIAL);
         };
 
         const techStats = {}; 
@@ -852,7 +846,7 @@
                 
                 if(dtRef && dtRef.getFullYear() === year) {
                     if(month === 'all' || dtRef.getMonth() === month) {
-                        if(checkContract(ordem['Frota'])) {
+                        if(checkFilial(ordem['Frota'])) {
                             if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
                             
                             const duration = calcDuration(m['Hora inicial'], m['Hora final']);
@@ -1038,10 +1032,14 @@
     function calcTechHHForMonth(name, year, month) {
         let hh = 0;
         
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
+        const frotaMap = new Map(); 
+        STATE.data.frota.forEach(f => frotaMap.set(f['FROTA'], { FILIAL: f['FILIAL'], LOTE: f['LOTE'] }));
+
+        const checkFilial = (frotaName) => {
+            const vehData = frotaMap.get(frotaName);
+            if (!vehData || vehData.LOTE === 'Desmobilizado') return false;
+            if(STATE.filters.filiais.has('Todos')) return true;
+            return STATE.filters.filiais.has(vehData.FILIAL);
         };
 
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
@@ -1057,7 +1055,7 @@
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                if(!checkContract(ordem['Frota'])) return;
+                if(!checkFilial(ordem['Frota'])) return;
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
                     hh += calcDuration(m['Hora inicial'], m['Hora final']);
