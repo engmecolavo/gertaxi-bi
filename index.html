@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.1 | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -25,7 +25,33 @@
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 
-        /* HEADER (Desktop: Sticky) */
+        /* TELA DE LOGIN (NOVO 1.1) */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            background-image: radial-gradient(circle at center, #222 0%, #000 100%);
+        }
+        .login-box {
+            background: #1e1e1e; padding: 40px; border-radius: 8px; border: 1px solid #333;
+            width: 100%; max-width: 350px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-top: 4px solid var(--brand);
+        }
+        .login-logo { margin-bottom: 30px; font-size: 24px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .login-input {
+            width: 100%; background: #252525; border: 1px solid #444; color: #fff; padding: 12px;
+            margin-bottom: 15px; border-radius: 4px; font-size: 14px; transition: 0.3s;
+        }
+        .login-input:focus { border-color: var(--brand); background: #333; }
+        .btn-login {
+            width: 100%; background: var(--brand); color: #000; font-weight: 800; padding: 12px;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-transform: uppercase;
+            transition: 0.2s; margin-top: 10px;
+        }
+        .btn-login:hover { background: #e6c200; transform: translateY(-2px); }
+        .btn-login:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; }
+        #login-msg { color: var(--red); font-size: 12px; margin-top: 15px; min-height: 15px; }
+
+        /* HEADER (Sticky Desktop) */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
             min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
@@ -44,28 +70,18 @@
         }
         .nav-item.active { background: var(--brand); color: #000; }
         .nav-item:hover:not(.active) { color: var(--brand); border-color: #444; }
+        /* Classe para ocultar itens via permissão */
+        .nav-item.hidden { display: none !important; }
 
-        /* FILTROS GERAIS & CUSTOM DROPDOWN */
+        /* FILTROS & DROPDOWN */
         .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
-        
-        /* Estilo do Dropdown */
-        .custom-dropdown {
-            position: relative;
-            width: 200px;
-            font-size: 13px;
-            font-weight: 500;
-        }
+        .custom-dropdown { position: relative; width: 200px; font-size: 13px; font-weight: 500; }
         .dropdown-btn {
-            background: #333; border: 1px solid #555; color: #fff; 
-            padding: 8px 12px; border-radius: 4px; cursor: pointer; 
-            display: flex; justify-content: space-between; align-items: center;
+            background: #333; border: 1px solid #555; color: #fff; padding: 8px 12px; border-radius: 4px; 
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
             white-space: nowrap; overflow: hidden;
         }
-        /* Ajuste para texto truncado no botão se ficar muito pequeno */
-        .dropdown-btn span:first-child {
-            text-overflow: ellipsis; overflow: hidden; max-width: 90%;
-        }
-
+        .dropdown-btn span:first-child { text-overflow: ellipsis; overflow: hidden; max-width: 90%; }
         .dropdown-content {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
             background: #252525; border: 1px solid #444; border-radius: 4px;
@@ -75,125 +91,62 @@
         .dropdown-content.show { display: block; }
         .dropdown-item {
             padding: 8px 10px; border-bottom: 1px solid #333; 
-            display: flex; align-items: center; gap: 8px; cursor: pointer;
-            color: #ccc;
+            display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc;
         }
         .dropdown-item:hover { background: #333; color: #fff; }
         .dropdown-item input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: var(--brand); }
 
-        /* KPI CARDS */
-        .kpi-row { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; margin-bottom: 20px; 
-        }
+        /* USER INFO (NOVO) */
+        .user-info-display { font-size: 11px; color: #666; margin-right: 10px; text-align: right; }
+
+        /* KPI & CHARTS */
+        .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .card { background: var(--bg-panel); padding: 15px; border-radius: 6px; border-left: 4px solid var(--brand); box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s ease; }
         .card-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
         .card-value { font-size: 24px; font-weight: 700; margin-top: 5px; word-break: break-all; }
         .card-sub { font-size: 10px; opacity: 0.7; margin-top: 2px; }
 
-        /* LAYOUT GRÁFICOS */
         .section-title { font-size: 15px; font-weight: 700; color: var(--brand); margin: 30px 0 15px 0; border-bottom: 1px solid #333; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        
         .charts-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; align-items: start; }
-        
-        .split-grid {
-            display: grid;
-            grid-template-columns: 3fr 7fr; 
-            gap: 20px; margin-bottom: 20px; align-items: start;
-        }
-
+        .split-grid { display: grid; grid-template-columns: 3fr 7fr; gap: 20px; margin-bottom: 20px; align-items: start; }
         .full-width { grid-column: span 2; } 
-        
         .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; overflow: hidden; }
-        
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
-
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; min-height: 42px;}
-        
         .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
-        /* TABELAS */
         table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
         th { text-align: left; background: #252525; color: #aaa; padding: 8px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #444; }
         td { border-bottom: 1px solid #333; padding: 8px; vertical-align: middle; }
         tr.clickable-row:hover { background-color: #333; cursor: pointer; }
-        
         .badge { padding: 3px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; display: inline-block;}
         .bg-corr { background: rgba(231, 76, 60, 0.15); color: var(--red); border: 1px solid rgba(231, 76, 60, 0.3); }
         .bg-prev { background: rgba(52, 152, 219, 0.15); color: var(--blue); border: 1px solid rgba(52, 152, 219, 0.3); }
         .bg-start { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
 
-        /* Controles Internos */
-        .sub-header-controls { 
-            display: flex; gap: 8px; align-items: center; 
-            background: #252525; padding: 6px 10px; border-radius: 4px; border: 1px solid #333; 
-            flex-wrap: nowrap; width: auto;
-        }
+        .sub-header-controls { display: flex; gap: 8px; align-items: center; background: #252525; padding: 6px 10px; border-radius: 4px; border: 1px solid #333; flex-wrap: nowrap; width: auto; }
         .sub-header-controls select { flex: 1; min-width: 0; width: auto; background:#333; color:#fff; border:1px solid #555; padding:6px; border-radius:4px; }
-        
-        .btn-clear {
-            background: #333; color: #fff; border: 1px solid #555;
-            padding: 6px 12px; border-radius: 4px; font-weight: bold; 
-            cursor: pointer; font-size: 10px; text-transform: uppercase;
-            transition: all 0.2s;
-        }
+        .btn-clear { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 10px; text-transform: uppercase; transition: all 0.2s; }
         .btn-clear:hover { background: var(--brand); color: #000; border-color: var(--brand); }
 
-        /* DASHBOARD VIEW */
         .dashboard-view { display: none; padding: 20px; animation: fadein 0.4s; }
         .dashboard-view.visible { display: block; }
         @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= RESPONSIVIDADE (MOBILE) ================= */
+        /* RESPONSIVIDADE */
         @media (max-width: 900px) {
-            header { 
-                /* Desabilita Sticky no Mobile para rolar junto */
-                position: relative; top: auto;
-                /* Espaça Logo (esq) e Filtro (dir) */
-                justify-content: space-between; 
-                padding: 10px;
-            }
-
-            /* LOGO: Ordem 1 (Esquerda) */
-            .logo-area { 
-                width: auto; /* Tamanho natural */
-                order: 1; 
-                margin-bottom: 0; 
-                font-size: 18px; /* Leve redução para caber */
-            }
+            header { position: relative; top: auto; justify-content: space-between; padding: 10px; }
+            .logo-area { width: auto; order: 1; margin-bottom: 0; font-size: 18px; }
             .logo-area .material-icons { font-size: 24px; }
-
-            /* FILTRO: Ordem 2 (Direita, mesma linha do Logo) */
-            .filter-bar { 
-                order: 2; 
-                width: auto; /* Tamanho natural */
-                justify-content: flex-end;
-            }
-            .custom-dropdown { 
-                width: 160px; /* Reduz largura do dropdown para não quebrar linha */
-            }
-            .dropdown-btn { 
-                padding: 6px 8px; /* Botão mais compacto */
-                font-size: 11px;
-            }
-
-            /* MENU: Ordem 3 (Linha de baixo) */
-            .nav-pills { 
-                order: 3; 
-                width: 100%; /* Força quebra para nova linha */
-                justify-content: space-between; 
-                margin-top: 10px; 
-                overflow-x: hidden; 
-            }
-            
+            .filter-bar { order: 2; width: auto; justify-content: flex-end; }
+            .custom-dropdown { width: 160px; }
+            .dropdown-btn { padding: 6px 8px; font-size: 11px; }
+            .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; }
             .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
             .mobile-hide { display: none; }
-            
-            /* Ajustes gerais de layout mobile */
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
             .charts-row, .split-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
@@ -206,6 +159,22 @@
 </head>
 <body>
 
+<div id="login-overlay">
+    <div class="login-box">
+        <div class="login-logo">
+            <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
+            GERTÁXI BI
+        </div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.1 - Acesso Restrito</div>
+        
+        <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
+        <input type="password" id="login-pass" class="login-input" placeholder="Senha">
+        
+        <button class="btn-login" id="btn-login" onclick="attemptLogin()" disabled>Carregando...</button>
+        <div id="login-msg"></div>
+    </div>
+</div>
+
 <header>
     <div class="logo-area">
         <span class="material-icons" style="color:var(--brand); font-size: 28px;">directions_bus</span>
@@ -213,33 +182,34 @@
     </div>
     
     <div class="nav-pills">
-        <div class="nav-item active" onclick="setMode('operacional')">
+        <div class="nav-item active" id="nav-operacional" onclick="setMode('operacional')">
             <span class="material-icons" style="font-size:16px">build</span> <span class="mobile-hide">PAINEL </span>OPERACIONAL
         </div>
-        <div class="nav-item" onclick="setMode('gerencial')">
+        <div class="nav-item" id="nav-gerencial" onclick="setMode('gerencial')">
             <span class="material-icons" style="font-size:16px">pie_chart</span> <span class="mobile-hide">GESTÃO DE </span>INDICADORES
         </div>
-        <div class="nav-item" onclick="setMode('tecnica')">
+        <div class="nav-item" id="nav-tecnica" onclick="setMode('tecnica')">
             <span class="material-icons" style="font-size:16px">trending_up</span> PERFORMANCE <span class="mobile-hide">TÉCNICA</span>
         </div>
     </div>
 
     <div class="filter-bar">
+        <div class="user-info-display">
+            <div id="user-name-display" style="font-weight:bold; color:#fff;"></div>
+            <div id="user-role-display" style="font-size:9px; color:var(--brand);"></div>
+        </div>
         <div class="custom-dropdown" id="main-filter-container">
             <div class="dropdown-btn" onclick="toggleFilterMenu()">
                 <span id="filter-text">Carregando...</span>
                 <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
             </div>
             <div class="dropdown-content" id="filter-options">
-                </div>
-        </div>
-        <div id="loading" style="font-size:10px; color:#666; margin-left:5px">
-            <span class="material-icons" style="font-size:12px; animation:spin 1s infinite linear">sync</span>
+            </div>
         </div>
     </div>
 </header>
 
-<div id="view-operacional" class="dashboard-view visible">
+<div id="view-operacional" class="dashboard-view">
     <div class="kpi-row">
         <div class="card" style="border-color: var(--red)">
             <div class="card-label">Veículos Parados</div>
@@ -384,7 +354,6 @@
 </div>
 
 <div id="view-tecnica" class="dashboard-view">
-    
     <div class="kpi-row">
         <div class="card" style="border-color: var(--brand)">
             <div class="card-label">Total HH Produzido</div>
@@ -448,12 +417,15 @@
         ordem: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=676143752&single=true&output=csv',
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
-        mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv'
+        mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
+        // NOVO 1.1: Tabela de Usuários
+        users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
     };
 
     const STATE = { 
-        mode: 'operacional', 
+        mode: null, // Será definido no login
         data: {}, 
+        currentUser: null,
         filters: { contracts: new Set(), naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null },
         processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
     };
@@ -464,17 +436,29 @@
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
-        await loadFiles(); 
+        // Carrega dados. O login permanece visível bloqueando a tela.
+        await loadFiles();
         
+        // Habilita botão de login após carregar
+        const btn = document.getElementById('btn-login');
+        btn.disabled = false;
+        btn.innerText = 'ACESSAR';
+
+        // Event listener para fechar dropdown
         document.addEventListener('click', (e) => {
             const container = document.getElementById('main-filter-container');
-            if (!container.contains(e.target)) {
-                document.getElementById('filter-options').classList.remove('show');
+            if (container && !container.contains(e.target)) {
+                const opt = document.getElementById('filter-options');
+                if(opt) opt.classList.remove('show');
             }
         });
 
         initFilterOptions(); 
-        runDashboardLogic(); 
+        
+        // Listener para tecla Enter no login
+        document.getElementById('login-pass').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') attemptLogin();
+        });
     };
 
     async function loadFiles() {
@@ -485,16 +469,108 @@
                 const sep = txt.split('\n')[0].includes(';') ? ';' : ',';
                 STATE.data[key] = Papa.parse(txt, { header: true, delimiter: sep, skipEmptyLines: true, transformHeader: h=>h.trim() }).data;
             });
-            document.getElementById('loading').innerText = 'ON';
-        } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
+            // Não iniciamos a lógica do dashboard aqui. Esperamos o login.
+        } catch (e) { 
+            console.error(e); 
+            document.getElementById('login-msg').innerText = "Erro de conexão com a base de dados.";
+        }
     }
+
+    // --- LÓGICA DE LOGIN (NOVO 1.1) ---
+    function attemptLogin() {
+        const emailInput = document.getElementById('login-email').value.trim();
+        const passInput = document.getElementById('login-pass').value.trim();
+        const msg = document.getElementById('login-msg');
+
+        if (!STATE.data.users) {
+            msg.innerText = "Base de usuários não carregada.";
+            return;
+        }
+
+        // Busca usuário (Case insensitive para email, sensitive para senha se quiser, aqui fiz simples)
+        // Colunas CSV: Email, Senha, Nome, Permissão
+        const user = STATE.data.users.find(u => 
+            u['Email'] && u['Email'].trim().toLowerCase() === emailInput.toLowerCase() &&
+            u['Senha'] && u['Senha'].trim() === passInput
+        );
+
+        if (user) {
+            STATE.currentUser = {
+                name: user['Nome'],
+                role: user['Permissão'] ? user['Permissão'].trim() : 'Técnico' // Default seguro
+            };
+            
+            applyPermissions(STATE.currentUser.role);
+            
+            // Exibe info do usuário
+            document.getElementById('user-name-display').innerText = STATE.currentUser.name;
+            document.getElementById('user-role-display').innerText = STATE.currentUser.role.toUpperCase();
+
+            // Remove overlay e inicia
+            document.getElementById('login-overlay').style.display = 'none';
+        } else {
+            msg.innerText = "Usuário ou senha incorretos.";
+            // Animação de erro
+            const box = document.querySelector('.login-box');
+            box.style.transform = "translateX(5px)";
+            setTimeout(() => box.style.transform = "translateX(-5px)", 100);
+            setTimeout(() => box.style.transform = "none", 200);
+        }
+    }
+
+    function applyPermissions(role) {
+        // IDs dos botões de navegação: nav-operacional, nav-gerencial, nav-tecnica
+        const navOp = document.getElementById('nav-operacional');
+        const navGer = document.getElementById('nav-gerencial');
+        const navTec = document.getElementById('nav-tecnica');
+
+        // Reset
+        navOp.classList.remove('hidden');
+        navGer.classList.remove('hidden');
+        navTec.classList.remove('hidden');
+
+        // Lógica
+        // Admin: Vê as 3 telas (Nenhum hidden)
+        // Analista: Vê painel Operacional e Indicadores (Técnica hidden)
+        // Técnico: Vê somente painel Operacional (Gerencial e Técnica hidden)
+
+        const r = role.toLowerCase();
+
+        if (r === 'admin') {
+            setMode('operacional'); // Default inicial
+        } 
+        else if (r === 'analista') {
+            navTec.classList.add('hidden');
+            setMode('operacional');
+        } 
+        else if (r === 'técnico' || r === 'tecnico') {
+            navGer.classList.add('hidden');
+            navTec.classList.add('hidden');
+            // Como só tem uma aba, podemos esconder a barra de navegação inteira se quisermos, 
+            // mas vou manter o botão "Operacional" visível para confirmar onde ele está.
+            setMode('operacional');
+        } 
+        else {
+            // Role desconhecida, fallback para Técnico (mais restrito)
+            navGer.classList.add('hidden');
+            navTec.classList.add('hidden');
+            setMode('operacional');
+        }
+    }
+
+    // --- FIM LÓGICA LOGIN ---
 
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`).classList.add('active');
+        
+        const btn = document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`);
+        if(btn) btn.classList.add('active');
+        
         document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
-        document.getElementById(`view-${mode}`).classList.add('visible');
+        const view = document.getElementById(`view-${mode}`);
+        if(view) view.classList.add('visible');
+        
         runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
@@ -681,7 +757,7 @@
     }
 
     // =========================================================================
-    // LÓGICA PERFORMANCE TÉCNICA (NOVA)
+    // LÓGICA PERFORMANCE TÉCNICA
     // =========================================================================
     function initTechnicalView() {
         const years = [...new Set(STATE.data.mo.map(m => {
@@ -702,8 +778,7 @@
         
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
-            addOption(selM, 'all', 'Todos'); // Opção adicionada
-            // ALTERAÇÃO: Meses abreviados
+            addOption(selM, 'all', 'Todos'); 
             ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
             
             const now = new Date();
@@ -746,7 +821,6 @@
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 
                 if(dtRef && dtRef.getFullYear() === year) {
-                     // Filtro de Mês: 'all' ou correspondência exata
                     if(month === 'all' || dtRef.getMonth() === month) {
                         if(checkContract(ordem['Frota'])) {
                             if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
@@ -780,7 +854,7 @@
         });
 
         ranking.sort((a,b) => b.hh - a.hh); 
-        STATE.processed.techRanking = ranking; // Save for KPI updates
+        STATE.processed.techRanking = ranking; 
 
         // Render Table
         const tbody = document.querySelector('#tableTechRanking tbody');
@@ -801,11 +875,8 @@
         });
 
         renderTechScatter(ranking);
-        
-        // Atualiza os cartões (KPIs) baseado na seleção atual (ou falta dela)
         updateTechKPIs();
 
-        // Lógica de Evolução Padrão (Independente)
         if (STATE.filters.techSelected) {
             updateTechEvolution(STATE.filters.techSelected);
         } else {
@@ -815,11 +886,11 @@
 
     function selectTechFromTable(name) {
         STATE.filters.techSelected = name;
-        processTechnical(); // Re-executa para destacar no gráfico e recalcular
+        processTechnical(); 
     }
 
     function updateTechKPIs() {
-        const ranking = STATE.processed.techRanking || []; // Dados mensais
+        const ranking = STATE.processed.techRanking || []; 
         const selected = STATE.filters.techSelected;
         
         let subset = ranking;
@@ -948,8 +1019,6 @@
         
         STATE.data.mo.forEach(m => {
             const tName = (m['Técnico']||'').trim().toUpperCase();
-            
-            // Se não for 'Equipe', filtra pelo nome. Se for 'Equipe', ignora 'ND' ou vazio
             if(name !== 'Equipe' && tName !== name) return;
             if(name === 'Equipe' && (tName === 'ND' || tName === '')) return;
 
@@ -958,9 +1027,7 @@
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                // Checa Contrato
                 if(!checkContract(ordem['Frota'])) return;
-
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
                     hh += calcDuration(m['Hora inicial'], m['Hora final']);
@@ -970,7 +1037,6 @@
         return hh;
     }
 
-    // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -1248,7 +1314,7 @@
                              var dataset = context.dataset;
                              var value = dataset.data[context.dataIndex];
                              var total = dataset.data.reduce((a, b) => a + b, 0);
-                             return (total > 0 && (value / total > 0.05)); // Mostrar apenas se > 5%
+                             return (total > 0 && (value / total > 0.05)); 
                         }
                     }
                 }
