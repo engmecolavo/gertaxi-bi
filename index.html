@@ -801,7 +801,7 @@
 
             // --- LÓGICA DE AJUSTE PARA TERCEIRIZADA ---
             const isTerceirizada = norm(o['Modo de manutenção']).includes('TERCEIRIZADA');
-            const displayHH = isTerceirizada ? '-' : oHH.toFixed(1) + 'h';
+            const displayHH = isTerceirizada ? '--' : oHH.toFixed(1) + 'h';
             // ------------------------------------------
 
             tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${displayHH}</td></tr>`;
@@ -1483,3 +1483,4 @@
 </script>
 </body>
 </html>
+
