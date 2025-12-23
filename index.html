@@ -184,7 +184,7 @@
             <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
             GERTÁXI BI
         </div>
-        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.3.1 - Acesso Restrito</div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.3.2 - Acesso Restrito</div>
         
         <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
         <input type="password" id="login-pass" class="login-input" placeholder="Senha">
@@ -480,6 +480,12 @@
         
         await loadFiles();
         
+        // --- CORREÇÃO DE CARREGAMENTO INICIAL ---
+        // Inicializa os filtros antes de checar a sessão, para que "Todos" já esteja selecionado
+        // quando o processOperational for chamado pela primeira vez.
+        initFilterOptions(); 
+        initBaseFilterOptions();
+
         checkSession(); 
 
         const btn = document.getElementById('btn-login');
@@ -500,10 +506,6 @@
             }
         });
 
-        initFilterOptions(); 
-        // Inicializa o filtro de Base também
-        initBaseFilterOptions();
-        
         document.getElementById('login-pass').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') attemptLogin();
         });
@@ -1388,7 +1390,26 @@
                 responsive:true, maintainAspectRatio:false, 
                 plugins:{
                     legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}, 
-                    datalabels: { display: false } 
+                    // --- CORREÇÃO DE RÓTULO (FIX 1) ---
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: (value, ctx) => {
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => { sum += data; });
+                            if(sum === 0) return '0%';
+                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                            return percentage;
+                        },
+                        display: function(context) {
+                            var dataset = context.dataset;
+                            var value = dataset.data[context.dataIndex];
+                            var total = dataset.data.reduce((a, b) => a + b, 0);
+                            // Mostra apenas se for maior que 3% para não sobrepor
+                            return (total > 0 && (value / total > 0.03)); 
+                        }
+                    }
                 },
                 onClick: (e, el) => {
                     if(el.length > 0) {
