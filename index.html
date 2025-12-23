@@ -51,17 +51,12 @@
         .btn-login:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; }
         #login-msg { color: var(--red); font-size: 12px; margin-top: 15px; min-height: 15px; }
 
-        /* HEADER - FIXO (CONGELADO) */
+        /* HEADER */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
-            min-height: 60px; display: flex; align-items: center; justify-content: space-between; 
-            padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); 
-            
-            /* Fixação */
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            
+            min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
+            padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 1000; 
+            position: sticky; top: 0; width: 100%;
             flex-wrap: wrap; gap: 10px;
         }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; white-space: nowrap; }
@@ -128,21 +123,11 @@
         .charts-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; align-items: start; }
         .split-grid { display: grid; grid-template-columns: 3fr 7fr; gap: 20px; margin-bottom: 20px; align-items: start; }
         .full-width { grid-column: span 2; } 
-        /* Ajuste no chart-panel para evitar estouro em telas pequenas */
         .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; overflow: hidden; }
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
         .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; min-height: 42px;}
-        
-        /* Table Container com Scroll Horizontal */
-        .table-container { 
-            height: 100%; 
-            overflow-y: auto; 
-            overflow-x: auto; /* Permite scroll lateral no mobile */
-            max-height: 340px; 
-            width: 100%;
-        }
-        
+        .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
@@ -167,7 +152,7 @@
         /* RESPONSIVIDADE */
         @media (max-width: 900px) {
             header { position: relative; top: auto; justify-content: space-between; padding: 10px; }
-            .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; font-size: 18px; }
+            .logo-area { width: auto; order: 1; margin-bottom: 0; font-size: 18px; }
             .logo-area .material-icons { font-size: 24px; }
             
             /* Ajuste para filtro e user info */
@@ -178,8 +163,8 @@
             .custom-dropdown { width: 140px; }
             .dropdown-btn { padding: 6px 8px; font-size: 11px; }
             
-            .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; flex-wrap: nowrap; }
-            .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 10px; text-align: center; }
+            .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; }
+            .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
             .mobile-hide { display: none; }
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
             .charts-row, .split-grid { grid-template-columns: 1fr; }
@@ -407,12 +392,12 @@
         <div class="card" style="border-color: var(--brand)">
             <div class="card-label">Total HH Produzido</div>
             <div class="card-value" id="tech-total-hh">0h</div>
-            <div class="card-sub"><span id="lbl-kpi-filter">Equipe Global</span></div>
+            <div class="card-sub">No período</div>
         </div>
         <div class="card" style="border-color: var(--blue)">
             <div class="card-label">Ordens Entregues</div>
             <div class="card-value" id="tech-total-ordens">0</div>
-            <div class="card-sub">Manutenções</div>
+            <div class="card-sub">Manutenções Fechadas</div>
         </div>
         <div class="card" style="border-color: var(--green)">
             <div class="card-label">Produtividade Média</div>
@@ -442,7 +427,7 @@
         </div>
         
         <div class="chart-panel normal-h">
-            <div class="panel-header">Evolução: <span id="tech-evol-name" style="color:var(--text-main); margin-left:5px">Selecione um técnico</span></div>
+            <div class="panel-header">Evolução (HH): <span id="tech-evol-name" style="color:var(--text-main); margin-left:5px">Selecione um técnico</span></div>
             <div style="flex:1; position: relative;"><canvas id="chartTechEvol"></canvas></div>
         </div>
     </div>
@@ -453,7 +438,7 @@
         </div>
         <div class="table-container">
             <table id="tableTechRanking">
-                <thead><tr><th>Pos</th><th>Técnico</th><th>Função</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
+                <thead><tr><th>Pos</th><th>Técnico</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -467,7 +452,11 @@
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
+        
+        // Link de USUÁRIOS para Login
         users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1961394362&single=true&output=csv',
+        
+        // NOVO: Link de TÉCNICOS para Filtro de Base
         tecnicos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
     };
 
@@ -477,7 +466,7 @@
         currentUser: null,
         filters: { 
             contracts: new Set(), 
-            bases: new Set(), 
+            bases: new Set(), // Novo filtro de bases
             naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null 
         },
         processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
@@ -512,6 +501,7 @@
         });
 
         initFilterOptions(); 
+        // Inicializa o filtro de Base também
         initBaseFilterOptions();
         
         document.getElementById('login-pass').addEventListener('keypress', function (e) {
@@ -631,6 +621,7 @@
         const view = document.getElementById(`view-${mode}`);
         if(view) view.classList.add('visible');
         
+        // --- TROCA DE FILTROS VISÍVEIS ---
         const mainFilter = document.getElementById('main-filter-container');
         const baseFilter = document.getElementById('base-filter-container');
 
@@ -654,6 +645,7 @@
         }
     }
 
+    // --- FILTRO DE CONTRATOS (Original) ---
     function initFilterOptions() {
         const container = document.getElementById('filter-options-main');
         container.innerHTML = '';
@@ -664,11 +656,15 @@
         updateFilterButtonLabel('contracts');
     }
 
+    // --- NOVO: FILTRO DE BASES (Técnico) ---
     function initBaseFilterOptions() {
         const container = document.getElementById('filter-options-base');
         container.innerHTML = '';
         if (!STATE.data.tecnicos) return;
+        
+        // Busca coluna "Base de execução" ou "Base"
         const bases = [...new Set(STATE.data.tecnicos.map(t => t['Base de execução'] || t['Base']).filter(b => b && b.trim() !== ''))].sort();
+        
         addCheckboxOption(container, 'Todos', 'Todas as Bases', true, 'bases');
         bases.forEach(b => addCheckboxOption(container, b, b, false, 'bases'));
         updateFilterButtonLabel('bases');
@@ -689,6 +685,7 @@
 
     function handleCheckboxChange(changedChk, type) {
         const val = changedChk.value;
+        // Seleciona o container correto baseado no tipo
         const containerId = type === 'contracts' ? 'filter-options-main' : 'filter-options-base';
         const allChk = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
         
@@ -733,7 +730,7 @@
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL
+    // LÓGICA OPERACIONAL (Mantém filtro de CONTRATO)
     // =========================================================================
     function processOperational() {
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
@@ -799,21 +796,13 @@
                 if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
                 if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
             });
-            
-            // Lógica HH para terceirizada
-            const modo = norm(o['Modo de manutenção']);
-            let displayHH = oHH.toFixed(1) + 'h';
-            if (modo.includes('TERCEIRIZADA') || modo.includes('EXTERNA')) {
-                displayHH = '--';
-            }
-
-            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${displayHH}</td></tr>`;
+            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
         });
         renderDoughnutWithLabels('chartOpType', ['Corretiva', 'Preventiva'], [hhCorr, hhPrev], ['#e74c3c', '#3498db']);
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL
+    // LÓGICA GERENCIAL (Mantém filtro de CONTRATO)
     // =========================================================================
     function processManagerial() {
         const frota = STATE.data.frota.filter(f => {
@@ -863,9 +852,12 @@
     }
 
     // =========================================================================
-    // LÓGICA PERFORMANCE TÉCNICA
+    // LÓGICA PERFORMANCE TÉCNICA (AGORA USA BASE DO TÉCNICO!)
     // =========================================================================
     function initTechnicalView() {
+        const years = [...new Set(STATE.data.mo.map(m => {
+            return 2024; // Exemplo fixo conforme original, pode ser dinamico se quiser
+        }))];
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const allDates = [];
         STATE.data.mo.forEach(m => {
@@ -882,12 +874,13 @@
         if(selY.options.length === 0) {
             uniqueYears.forEach(y => addOption(selY, y, y));
             addOption(selM, 'all', 'Todos'); 
-            // Meses abreviados
             ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
+            
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
             selM.value = now.getMonth();
         }
+        
         processTechnical();
     }
 
@@ -901,6 +894,8 @@
         const fM = document.getElementById('tech-month').value;
         const month = fM === 'all' ? 'all' : parseInt(fM);
         
+        // --- NOVA LÓGICA DE FILTRO POR BASE (ITEM A) ---
+        // Cria mapa de Técnicos -> Base
         const techBaseMap = new Map();
         if(STATE.data.tecnicos) {
             STATE.data.tecnicos.forEach(t => {
@@ -914,13 +909,9 @@
             if(STATE.filters.bases.has('Todos')) return true;
             return STATE.filters.bases.has(techBase);
         };
+        // --------------------------------------------------
 
-        const techFuncMap = new Map();
-        if(STATE.data.tecnicos) {
-            STATE.data.tecnicos.forEach(t => techFuncMap.set(norm(t['Nome']||t['Técnico']), t['Função'] || '-'));
-        }
-
-        const techStats = {};
+        const techStats = {}; 
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
 
@@ -934,11 +925,16 @@
 
             if(ordem) {
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
+                
                 if(dtRef && dtRef.getFullYear() === year) {
                     if(month === 'all' || dtRef.getMonth() === month) {
+                        
+                        // --- SUBSTITUIÇÃO DO FILTRO DE CONTRATO PELO DE BASE ---
                         const baseDoTecnico = techBaseMap.get(techName) || 'Indefinida';
-                        if(checkBase(baseDoTecnico)) {
+                        
+                        if(checkBase(baseDoTecnico)) { // Usa CheckBase em vez de CheckContract
                             if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                            
                             const duration = calcDuration(m['Hora inicial'], m['Hora final']);
                             if(duration > 0) {
                                 techStats[techName].hh += duration;
@@ -951,23 +947,15 @@
             }
         });
 
-        let totalHH = 0;
-        let totalOrdersSet = new Set();
         const ranking = [];
 
         Object.entries(techStats).forEach(([name, stat]) => {
-            const funcao = techFuncMap.get(name) || '-';
-            if (STATE.filters.techSelected === null || STATE.filters.techSelected === name) {
-                totalHH += stat.hh;
-                stat.orders.forEach(o => totalOrdersSet.add(o));
-            }
             const possibleHours = (stat.days.size * 8) || 1; 
             let occup = (stat.hh / possibleHours) * 100;
             if(occup > 100) occup = 100;
 
             ranking.push({
                 name: name,
-                funcao: funcao,
                 hh: stat.hh,
                 qtd: stat.orders.size,
                 avg: stat.orders.size > 0 ? (stat.hh / stat.orders.size) : 0,
@@ -975,24 +963,16 @@
             });
         });
 
-        ranking.sort((a,b) => b.hh - a.hh);
-        STATE.processed.techRanking = ranking;
+        ranking.sort((a,b) => b.hh - a.hh); 
+        STATE.processed.techRanking = ranking; 
 
-        const lblFilter = STATE.filters.techSelected ? STATE.filters.techSelected : (STATE.filters.bases.has('Todos') ? 'Equipe Global' : 'Equipe Filtrada');
-        document.getElementById('lbl-kpi-filter').innerText = lblFilter;
-        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
-        document.getElementById('tech-total-ordens').innerText = totalOrdersSet.size;
-        document.getElementById('tech-avg-prod').innerText = totalOrdersSet.size > 0 ? (totalHH / totalOrdersSet.size).toFixed(1) : '0';
-        document.getElementById('tech-count').innerText = STATE.filters.techSelected ? 1 : ranking.length;
-
+        // Render Table
         const tbody = document.querySelector('#tableTechRanking tbody');
         tbody.innerHTML = '';
         ranking.forEach((r, i) => {
-            const isSel = r.name === STATE.filters.techSelected ? 'selected-row' : '';
-            const row = `<tr class="clickable-row ${isSel}" onclick="selectTechFromTable('${r.name}')">
+            const row = `<tr class="clickable-row" onclick="selectTechFromTable('${r.name}')">
                 <td>${i+1}º</td>
                 <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
-                <td style="font-size:11px; color:#aaa">${r.funcao}</td>
                 <td>${r.qtd}</td>
                 <td>${r.hh.toFixed(1)}h</td>
                 <td>${r.avg.toFixed(1)}h</td>
@@ -1005,10 +985,12 @@
         });
 
         renderTechScatter(ranking);
+        updateTechKPIs();
+
         if (STATE.filters.techSelected) {
-            updateTechEvolution(STATE.filters.techSelected, checkBase, techBaseMap);
+            updateTechEvolution(STATE.filters.techSelected);
         } else {
-            updateTechEvolution('Equipe', checkBase, techBaseMap);
+            updateTechEvolution('Equipe');
         }
     }
 
@@ -1017,25 +999,49 @@
         processTechnical(); 
     }
 
+    function updateTechKPIs() {
+        const ranking = STATE.processed.techRanking || []; 
+        const selected = STATE.filters.techSelected;
+        
+        let subset = ranking;
+        if (selected) {
+            subset = ranking.filter(r => r.name === selected);
+        }
+
+        let totalHH = 0;
+        let totalOrders = 0; 
+        
+        subset.forEach(r => {
+            totalHH += r.hh;
+            totalOrders += r.qtd;
+        });
+
+        const count = subset.length;
+        const avg = totalOrders > 0 ? (totalHH / totalOrders) : 0;
+
+        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
+        document.getElementById('tech-total-ordens').innerText = totalOrders;
+        document.getElementById('tech-avg-prod').innerText = avg.toFixed(1);
+        document.getElementById('tech-count').innerText = count;
+    }
+
     function renderTechScatter(data) {
         const ctx = document.getElementById('chartTechScatter').getContext('2d');
         if(charts['techScatter']) charts['techScatter'].destroy();
         
-        const points = data.map(d => ({ 
-            x: d.qtd, 
-            y: d.hh, 
-            name: d.name,
-            color: (STATE.filters.techSelected && STATE.filters.techSelected !== d.name) ? '#444' : '#FFD700' 
-        }));
+        const points = data.map(d => ({ x: d.qtd, y: d.hh, name: d.name }));
         
+        const pointColors = points.map(p => p.name === STATE.filters.techSelected ? '#FFF' : '#FFD700');
+        const pointRadii = points.map(p => p.name === STATE.filters.techSelected ? 8 : 6);
+
         charts['techScatter'] = new Chart(ctx, {
             type: 'scatter',
             data: {
                 datasets: [{
                     label: 'Técnicos',
                     data: points,
-                    backgroundColor: points.map(p => p.color),
-                    pointRadius: points.map(p => p.color === '#FFD700' ? 6 : 6),
+                    backgroundColor: pointColors,
+                    pointRadius: pointRadii,
                     pointHoverRadius: 9
                 }]
             },
@@ -1043,18 +1049,25 @@
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: function(ctx) { return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h (' + ctx.raw.x + ' OS)'; } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h em ' + ctx.raw.x + ' ordens';
+                            }
+                        }
+                    },
                     datalabels: { display: false }
                 },
                 scales: {
-                    x: { title: { display: true, text: 'Volume (Ordens)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
-                    y: { title: { display: true, text: 'Esforço (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
+                    x: { title: { display: true, text: 'Qtd Ordens', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
+                    y: { title: { display: true, text: 'Horas (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
                 },
-                onClick: (e, el) => {
+                onClick: (e, el, chart) => {
                     if(el.length > 0) {
                         const idx = el[0].index;
-                        STATE.filters.techSelected = points[idx].name;
-                        processTechnical();
+                        const techName = points[idx].name;
+                        STATE.filters.techSelected = techName;
+                        processTechnical(); 
                     } else {
                         STATE.filters.techSelected = null;
                         processTechnical();
@@ -1064,19 +1077,18 @@
         });
     }
 
-    function updateTechEvolution(techName, checkBaseFunc, techBaseMap) {
-        const title = techName === 'Equipe' ? 'Evolução da Equipe' : `Evolução: ${techName}`;
-        document.getElementById('tech-evol-name').innerText = title;
+    function updateTechEvolution(techName) {
+        if(!techName) return;
+        document.getElementById('tech-evol-name').innerText = techName;
         
         const monthsData = [];
         const labels = [];
-        const now = new Date();
+        const now = new Date(); 
         
         for(let i=5; i>=0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             labels.push(d.toLocaleString('default', { month: 'short' }));
-            const target = techName === 'Equipe' ? null : techName;
-            monthsData.push(calcTechHHForMonth(target, d.getFullYear(), d.getMonth(), checkBaseFunc, techBaseMap));
+            monthsData.push(calcTechHHForMonth(techName, d.getFullYear(), d.getMonth()));
         }
 
         const ctx = document.getElementById('chartTechEvol').getContext('2d');
@@ -1087,11 +1099,12 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'HH Total',
+                    label: 'HH Produzido',
                     data: monthsData,
-                    borderColor: techName !== 'Equipe' ? '#2ecc71' : '#3498db',
-                    backgroundColor: techName !== 'Equipe' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(52, 152, 219, 0.1)',
-                    fill: true, tension: 0.3
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    fill: true,
+                    tension: 0.3
                 }]
             },
             options: {
@@ -1102,26 +1115,40 @@
         });
     }
 
-    function calcTechHHForMonth(targetName, year, month, checkBaseFunc, techBaseMap) {
+    function calcTechHHForMonth(name, year, month) {
         let hh = 0;
+        
+        // --- NOVA LÓGICA PARA EVOLUÇÃO TAMBÉM ---
+        const techBaseMap = new Map();
+        if(STATE.data.tecnicos) {
+            STATE.data.tecnicos.forEach(t => {
+                const nome = (t['Técnico']||t['Nome']||'').trim().toUpperCase();
+                const base = (t['Base de execução']||t['Base']||'').trim();
+                if(nome) techBaseMap.set(nome, base);
+            });
+        }
+        const checkBase = (techBase) => {
+            if(STATE.filters.bases.has('Todos')) return true;
+            return STATE.filters.bases.has(techBase);
+        };
+        // ----------------------------------------
+
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         
         STATE.data.mo.forEach(m => {
             const tName = (m['Técnico']||'').trim().toUpperCase();
-            if(tName === '' || tName === 'ND') return;
-            
-            if(targetName && tName !== targetName) return;
-            
+            if(name !== 'Equipe' && tName !== name) return;
+            if(name === 'Equipe' && (tName === 'ND' || tName === '')) return;
+
             let ordem = null;
             if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                if(!targetName && checkBaseFunc) {
-                    const b = techBaseMap.get(tName) || 'Indefinida';
-                    if(!checkBaseFunc(b)) return;
-                }
+                // Checa BASE DO TECNICO em vez de Contrato
+                const baseDoTecnico = techBaseMap.get(tName) || 'Indefinida';
+                if(!checkBase(baseDoTecnico)) return;
 
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
@@ -1132,15 +1159,7 @@
         return hh;
     }
 
-    // Auxiliares
-    function parseDate(s) { if(!s)return null; if(s.includes('/')) {const p=s.split(' ')[0].split('/'); return new Date(p[2],p[1]-1,p[0]);} return new Date(s); }
-    function calcDuration(s,e) { if(!s||!e)return 0; const tm=x=>{const p=x.split(':'); return parseInt(p[0])*60+parseInt(p[1])}; let d=tm(e)-tm(s); if(d<0)d+=1440; return d/60; }
-    function calculateGlobalMKBF(r) {
-        const g = {}; r.forEach(x => { if(!g[x['Frota']])g[x['Frota']]=[]; g[x['Frota']].push(parseInt(x['Odômetro (Km)'])||0); });
-        let km=0, f=0; Object.values(g).forEach(k => { k.sort((a,b)=>a-b); for(let i=1; i<k.length; i++) { const d=k[i]-k[i-1]; if(d>0&&d<50000){km+=d; f++;} } });
-        return f>0 ? km/f : 0;
-    }
-    function addOption(s,v,t) { const o=document.createElement('option'); o.value=v; o.innerText=t; s.appendChild(o); }
+    // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -1150,12 +1169,14 @@
         addOption(selM, 'all', 'Mês'); ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
         if(oldY && years.includes(parseInt(oldY))) selY.value = oldY; if(oldM) selM.value = oldM;
     }
+
     function resetCentralSelection() { 
         STATE.filters.naturezaFocus = null; 
         document.getElementById('central-year').value = 'all'; 
         document.getElementById('central-month').value = 'all'; 
         updateCentralCharts(); 
     }
+
     function updateCentralCharts() {
         const fY = document.getElementById('central-year').value; const fM = document.getElementById('central-month').value;
         const filtered = STATE.processed.centralData.filter(d => { return (fY === 'all' || d.year == fY) && (fM === 'all' || d.month == fM); });
@@ -1163,6 +1184,194 @@
         renderInteractiveDoughnut(Object.keys(cNat), Object.values(cNat), filtered);
         STATE.filters.naturezaFocus = null; document.getElementById('pareto-filter-label').innerText = `(Todas)`; updatePareto(filtered);
     }
+
+    function processMKBFData(reqs) {
+        const byFrota = {};
+        reqs.forEach(r => {
+            if(!byFrota[r['Frota']]) byFrota[r['Frota']] = [];
+            byFrota[r['Frota']].push({ date: parseDate(r['Data da parada']), km: parseInt(r['Odômetro (Km)'])||0 });
+        });
+        const dataByYear = {};
+        Object.entries(byFrota).forEach(([frota, list]) => {
+            list.sort((a,b) => a.km - b.km);
+            for(let i=1; i < list.length; i++) {
+                const delta = list[i].km - list[i-1].km; const dt = list[i].date;
+                if(dt && delta > 0 && delta < 50000) {
+                    const y = dt.getFullYear(); const m = dt.getMonth();
+                    if(!dataByYear[y]) dataByYear[y] = [];
+                    dataByYear[y].push({ frota: frota, mes: m, km: delta, falha: 1 });
+                }
+            }
+        });
+        STATE.processed.mkbfData = dataByYear;
+    }
+    function setupMKBFYearFilter() {
+        const years = Object.keys(STATE.processed.mkbfData).sort().reverse();
+        const sel = document.getElementById('mkbf-year'); const old = sel.value; sel.innerHTML = '';
+        if(years.length === 0) { addOption(sel, '', '0'); return; }
+        years.forEach(y => addOption(sel, y, y));
+        if(old && years.includes(old)) sel.value = old; else sel.value = years[0];
+    }
+    function resetMKBFSelection() { STATE.filters.mkbfVehicle = null; renderMKBFPanels(); }
+    function renderMKBFPanels() {
+        const year = document.getElementById('mkbf-year').value;
+        const rawList = STATE.processed.mkbfData[year] || [];
+        const vehicleStats = {};
+        rawList.forEach(item => {
+            if(!vehicleStats[item.frota]) vehicleStats[item.frota] = { km: 0, falhas: 0 };
+            vehicleStats[item.frota].km += item.km; vehicleStats[item.frota].falhas += item.falha;
+        });
+        const chartData = Object.entries(vehicleStats)
+            .map(([frota, s]) => ({ frota, mkbf: s.falhas > 0 ? Math.round(s.km/s.falhas) : 0 }))
+            .sort((a,b) => b.mkbf - a.mkbf);
+        renderMKBFVehicleChart(chartData);
+        renderMKBFEvolChart(rawList);
+    }
+    function renderMKBFVehicleChart(data) {
+        const ctx = document.getElementById('chartMgmtMKBFVeic').getContext('2d');
+        if(charts['mkbfVeic']) charts['mkbfVeic'].destroy();
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        document.getElementById('mkbf-veic-inner-container').style.height = `${finalHeight}px`;
+        const labels = data.map(d => d.frota); const values = data.map(d => d.mkbf);
+        const colors = labels.map(l => l === STATE.filters.mkbfVehicle ? '#FFD700' : '#3498db');
+        charts['mkbfVeic'] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'MKBF (Km)', data: values, backgroundColor: colors, barPercentage: 0.8, categoryPercentage: 0.9 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mkbfVehicle = labels[idx]; renderMKBFPanels(); } },
+                scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+    function renderMKBFEvolChart(rawList) {
+        let filteredList = rawList; let title = "Evolução do MKBF";
+        if (STATE.filters.mkbfVehicle) { filteredList = rawList.filter(d => d.frota === STATE.filters.mkbfVehicle); title = `MKBF: ${STATE.filters.mkbfVehicle}`; }
+        document.getElementById('lbl-mkbf-evolucao').innerText = title;
+        const mesesData = Array(12).fill({km:0, falhas:0}).map(x => ({...x}));
+        filteredList.forEach(d => { mesesData[d.mes].km += d.km; mesesData[d.mes].falhas += d.falha; });
+        const dataPoints = mesesData.map(m => m.falhas > 0 ? Math.round(m.km/m.falhas) : null);
+        const ctx = document.getElementById('chartMgmtMKBF').getContext('2d');
+        if(charts['mkbfEvol']) charts['mkbfEvol'].destroy();
+        charts['mkbfEvol'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['J','F','M','A','M','J','J','A','S','O','N','D'],
+                datasets: [{
+                    label: 'MKBF', data: dataPoints,
+                    borderColor: STATE.filters.mkbfVehicle ? '#FFD700' : '#3498db',
+                    backgroundColor: STATE.filters.mkbfVehicle ? 'rgba(255, 215, 0, 0.1)' : 'rgba(52, 152, 219, 0.1)',
+                    fill: true, tension: 0.3, spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+
+    function processMTTRData(idsF) {
+        const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+        const dataByYear = {};
+        STATE.data.mo.forEach(m => {
+            let realOrdId = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+            if(realOrdId) {
+                const ordem = ordemMap.get(realOrdId);
+                if(ordem) {
+                    const isCorrective = norm(ordem['Tipo de manutenção']).includes('CORRETIVA');
+                    const isEncerrada = norm(ordem['Status da ordem']) === 'ENCERRADA';
+                    const isFrotaOk = idsF.has(ordem['Frota']);
+                    if(isCorrective && isEncerrada && isFrotaOk) {
+                        const dt = parseDate(ordem['Data da abertura']);
+                        if(dt) {
+                            const y = dt.getFullYear(); const mes = dt.getMonth();
+                            const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                            const natureza = (servMap.get(m['ID_SERV']) ? servMap.get(m['ID_SERV'])['Natureza do serviço'] : null) || 'GERAL';
+                            if(!dataByYear[y]) dataByYear[y] = [];
+                            dataByYear[y].push({ natureza: natureza, mes: mes, hours: duration, id_ordem: ordem['ID'] });
+                        }
+                    }
+                }
+            }
+        });
+        STATE.processed.mttrData = dataByYear;
+    }
+
+    function setupMTTRYearFilter() {
+        const years = Object.keys(STATE.processed.mttrData).sort().reverse();
+        const sel = document.getElementById('mttr-year'); const old = sel.value; sel.innerHTML = '';
+        if(years.length === 0) { addOption(sel, '', '0'); return; }
+        years.forEach(y => addOption(sel, y, y));
+        if(old && years.includes(old)) sel.value = old; else sel.value = years[0];
+    }
+    function resetMTTRSelection() { STATE.filters.mttrNatureza = null; renderMTTRPanels(); }
+    function renderMTTRPanels() {
+        const year = document.getElementById('mttr-year').value;
+        const rawList = STATE.processed.mttrData[year] || [];
+        const natGrouping = {}; 
+        rawList.forEach(item => {
+            if(!natGrouping[item.natureza]) natGrouping[item.natureza] = { hours: 0, orders: new Set() };
+            natGrouping[item.natureza].hours += item.hours;
+            natGrouping[item.natureza].orders.add(item.id_ordem);
+        });
+        const chartData = Object.entries(natGrouping)
+            .map(([nat, s]) => ({ natureza: nat, mttr: s.orders.size > 0 ? (s.hours / s.orders.size) : 0 }))
+            .sort((a,b) => b.mttr - a.mttr);
+        renderMTTRRankingChart(chartData);
+        renderMTTREvolChart(rawList);
+    }
+
+    function renderMTTRRankingChart(data) {
+        const ctx = document.getElementById('chartMgmtMTTRRanking').getContext('2d');
+        if(charts['mttrRank']) charts['mttrRank'].destroy();
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        document.getElementById('mttr-nat-inner-container').style.height = `${finalHeight}px`;
+        const labels = data.map(d => d.natureza); const values = data.map(d => d.mttr.toFixed(1));
+        const colors = labels.map(l => l === STATE.filters.mttrNatureza ? '#FFD700' : '#e67e22');
+        charts['mttrRank'] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'MTTR (h)', data: values, backgroundColor: colors, barPercentage: 0.8, categoryPercentage: 0.9 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mttrNatureza = labels[idx]; renderMTTRPanels(); } },
+                scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+    function renderMTTREvolChart(rawList) {
+        let filteredList = rawList; let title = "Evolução do MTTR";
+        if (STATE.filters.mttrNatureza) { filteredList = rawList.filter(d => d.natureza === STATE.filters.mttrNatureza); title = `MTTR: ${STATE.filters.mttrNatureza}`; }
+        document.getElementById('lbl-mttr-evolucao').innerText = title;
+        const mesesData = Array(12).fill(null).map(() => ({ hours: 0, orders: new Set() }));
+        filteredList.forEach(d => { mesesData[d.mes].hours += d.hours; mesesData[d.mes].orders.add(d.id_ordem); });
+        const dataPoints = mesesData.map(m => m.orders.size > 0 ? (m.hours / m.orders.size).toFixed(1) : null);
+        const ctx = document.getElementById('chartMgmtMTTREvol').getContext('2d');
+        if(charts['mttrEvol']) charts['mttrEvol'].destroy();
+        charts['mttrEvol'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['J','F','M','A','M','J','J','A','S','O','N','D'],
+                datasets: [{
+                    label: 'MTTR', data: dataPoints,
+                    borderColor: STATE.filters.mttrNatureza ? '#FFD700' : '#e67e22',
+                    backgroundColor: STATE.filters.mttrNatureza ? 'rgba(255, 215, 0, 0.1)' : 'rgba(230, 126, 34, 0.1)',
+                    fill: true, tension: 0.3, spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+
     function renderInteractiveDoughnut(l, d, rawData) {
         const ctx = document.getElementById('chartMgmtNatureza').getContext('2d');
         if(charts['natureza']) charts['natureza'].destroy();
@@ -1173,23 +1382,7 @@
                 responsive:true, maintainAspectRatio:false, 
                 plugins:{
                     legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}, 
-                    datalabels: {
-                        color: '#fff',
-                        font: { weight: 'bold', size: 11 },
-                        formatter: (value, ctx) => {
-                            let sum = 0;
-                            let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => { sum += data; });
-                            if(sum === 0) return '0%';
-                            return (value*100 / sum).toFixed(1) + "%";
-                        },
-                        display: function(context) {
-                             var dataset = context.dataset;
-                             var value = dataset.data[context.dataIndex];
-                             var total = dataset.data.reduce((a, b) => a + b, 0);
-                             return (total > 0 && (value / total > 0.05)); 
-                        }
-                    }
+                    datalabels: { display: false } 
                 },
                 onClick: (e, el) => {
                     if(el.length > 0) {
@@ -1203,6 +1396,63 @@
             }
         });
     }
+
+    function updatePareto(lst) {
+        const c = {}; lst.forEach(s => { const t = s.tipo; c[t] = (c[t]||0)+1; });
+        const srtd = Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,10);
+        const l = srtd.map(x=>x[0]), v = srtd.map(x=>x[1]);
+        let sum = 0, tot = v.reduce((a,b)=>a+b,0); const acc = v.map(val=>{sum+=val; return (sum/tot)*100;});
+        const ctx = document.getElementById('chartMgmtPareto').getContext('2d');
+        if(charts['pareto']) charts['pareto'].destroy();
+        charts['pareto'] = new Chart(ctx, {
+            type: 'bar', 
+            data: {labels:l, datasets:[{label:'Qtd', data:v, backgroundColor:'#FFD700', order:2}, {label:'%', data:acc, type:'line', borderColor:'#e74c3c', yAxisID:'y1', order:1}]},
+            options: { responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true, grid:{color:'#333'}}, y1:{position:'right', min:0, max:100, grid:{display:false}}, x:{ticks:{color:'#aaa', font:{size:10}}}}, plugins: { datalabels: { display: false } } }
+        });
+    }
+
+    function renderDoughnutWithLabels(id, l, d, c) {
+        const ctx = document.getElementById(id).getContext('2d');
+        if(charts[id]) charts[id].destroy();
+        charts[id] = new Chart(ctx, { 
+            type: 'doughnut', 
+            data: {labels:l, datasets:[{data:d, backgroundColor:c, borderWidth:0}]}, 
+            options: {
+                responsive:true, 
+                maintainAspectRatio:false, 
+                plugins:{
+                    legend:{position:'right', labels:{color:'#aaa', font:{size:11}}},
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: (value, ctx) => {
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => { sum += data; });
+                            if(sum === 0) return '0%';
+                            let percentage = (value*100 / sum).toFixed(1)+"%";
+                            return percentage;
+                        },
+                        display: function(context) {
+                             var dataset = context.dataset;
+                             var value = dataset.data[context.dataIndex];
+                             var total = dataset.data.reduce((a, b) => a + b, 0);
+                             return (total > 0 && (value / total > 0.05)); 
+                        }
+                    }
+                }
+            } 
+        });
+    }
+
+    function parseDate(s) { if(!s)return null; if(s.includes('/')) {const p=s.split(' ')[0].split('/'); return new Date(p[2],p[1]-1,p[0]);} return new Date(s); }
+    function calcDuration(s,e) { if(!s||!e)return 0; const tm=x=>{const p=x.split(':'); return parseInt(p[0])*60+parseInt(p[1])}; let d=tm(e)-tm(s); if(d<0)d+=1440; return d/60; }
+    function calculateGlobalMKBF(r) {
+        const g = {}; r.forEach(x => { if(!g[x['Frota']])g[x['Frota']]=[]; g[x['Frota']].push(parseInt(x['Odômetro (Km)'])||0); });
+        let km=0, f=0; Object.values(g).forEach(k => { k.sort((a,b)=>a-b); for(let i=1; i<k.length; i++) { const d=k[i]-k[i-1]; if(d>0&&d<50000){km+=d; f++;} } });
+        return f>0 ? km/f : 0;
+    }
+    function addOption(s,v,t) { const o=document.createElement('option'); o.value=v; o.innerText=t; s.appendChild(o); }
 </script>
 </body>
 </html>
