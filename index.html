@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI 1.5 | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.3 | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -20,19 +20,48 @@
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-body); color: var(--text-main); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow-x: hidden; padding-bottom: 40px; }
 
+        /* Scrollbar Personalizada */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
 
-        /* HEADER FIXO */
+        /* TELA DE LOGIN */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center;
+            background-image: radial-gradient(circle at center, #222 0%, #000 100%);
+        }
+        .login-box {
+            background: #1e1e1e; padding: 40px; border-radius: 8px; border: 1px solid #333;
+            width: 100%; max-width: 350px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-top: 4px solid var(--brand);
+        }
+        .login-logo { margin-bottom: 30px; font-size: 24px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .login-input {
+            width: 100%; background: #252525; border: 1px solid #444; color: #fff; padding: 12px;
+            margin-bottom: 15px; border-radius: 4px; font-size: 14px; transition: 0.3s;
+        }
+        .login-input:focus { border-color: var(--brand); background: #333; }
+        .btn-login {
+            width: 100%; background: var(--brand); color: #000; font-weight: 800; padding: 12px;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-transform: uppercase;
+            transition: 0.2s; margin-top: 10px;
+        }
+        .btn-login:hover { background: #e6c200; transform: translateY(-2px); }
+        .btn-login:disabled { background: #444; color: #888; cursor: not-allowed; transform: none; }
+        #login-msg { color: var(--red); font-size: 12px; margin-top: 15px; min-height: 15px; }
+
+        /* HEADER */
         header { 
             background: var(--bg-header); border-bottom: 2px solid var(--brand); 
-            min-height: 60px; display: flex; align-items: center; justify-content: space-between; 
-            padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); 
-            position: sticky; top: 0; z-index: 1000; flex-wrap: wrap; gap: 10px;
+            min-height: 70px; display: flex; align-items: center; justify-content: space-between; 
+            padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 1000; 
+            position: sticky; top: 0; width: 100%;
+            flex-wrap: wrap; gap: 10px;
         }
         .logo-area { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing: 1px; white-space: nowrap; }
         
+        /* NAV PILLS */
         .nav-pills { display: flex; gap: 5px; background: #222; padding: 4px; border-radius: 6px; overflow-x: auto; }
         .nav-item { 
             padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 13px; font-weight: 600; 
@@ -41,14 +70,31 @@
         }
         .nav-item.active { background: var(--brand); color: #000; }
         .nav-item:hover:not(.active) { color: var(--brand); border-color: #444; }
+        .nav-item.hidden { display: none !important; }
 
-        /* FILTROS */
-        .filter-bar { display: flex; align-items: center; gap: 10px; flex-grow: 1; justify-content: flex-end; position: relative; }
-        .custom-dropdown { position: relative; width: 220px; font-size: 13px; font-weight: 500; }
+        /* FILTROS & INFO USER */
+        .filter-bar { display: flex; align-items: center; gap: 15px; flex-grow: 1; justify-content: flex-end; position: relative; }
+        
+        .user-info-wrapper {
+            display: flex; align-items: center; gap: 10px; 
+            padding-left: 10px; border-left: 1px solid #333; 
+        }
+        .user-info-display { font-size: 11px; color: #666; text-align: right; }
+        
+        .btn-logout {
+            background: #252525; border: 1px solid #555; color: #fff; 
+            padding: 6px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: 0.2s;
+        }
+        .btn-logout:hover { background: #333; border-color: #fff; transform: scale(1.05); }
+
+        .custom-dropdown { position: relative; width: 200px; font-size: 13px; font-weight: 500; }
         .dropdown-btn {
             background: #333; border: 1px solid #555; color: #fff; padding: 8px 12px; border-radius: 4px; 
             cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            white-space: nowrap; overflow: hidden;
         }
+        .dropdown-btn span:first-child { text-overflow: ellipsis; overflow: hidden; max-width: 90%; }
         .dropdown-content {
             display: none; position: absolute; top: 100%; left: 0; width: 100%;
             background: #252525; border: 1px solid #444; border-radius: 4px;
@@ -56,79 +102,97 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-top: 5px;
         }
         .dropdown-content.show { display: block; }
-        .dropdown-item { padding: 8px 10px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc; }
+        .dropdown-item {
+            padding: 8px 10px; border-bottom: 1px solid #333; 
+            display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc;
+        }
         .dropdown-item:hover { background: #333; color: #fff; }
         .dropdown-item input[type="checkbox"] { transform: scale(1.2); cursor: pointer; accent-color: var(--brand); }
 
-        /* LAYOUT */
-        .dashboard-view { display: none; padding: 20px; animation: fadein 0.4s; }
-        .dashboard-view.visible { display: block; }
-        @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* Utilitário para ocultar elementos */
+        .d-none { display: none !important; }
 
+        /* KPI & CHARTS */
         .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .card { background: var(--bg-panel); padding: 15px; border-radius: 6px; border-left: 4px solid var(--brand); box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .card { background: var(--bg-panel); padding: 15px; border-radius: 6px; border-left: 4px solid var(--brand); box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: all 0.3s ease; }
         .card-label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
         .card-value { font-size: 24px; font-weight: 700; margin-top: 5px; word-break: break-all; }
         .card-sub { font-size: 10px; opacity: 0.7; margin-top: 2px; }
 
         .section-title { font-size: 15px; font-weight: 700; color: var(--brand); margin: 30px 0 15px 0; border-bottom: 1px solid #333; padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        
         .charts-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; align-items: start; }
         .split-grid { display: grid; grid-template-columns: 3fr 7fr; gap: 20px; margin-bottom: 20px; align-items: start; }
         .full-width { grid-column: span 2; } 
-        
-        /* CORREÇÃO CRÍTICA: Remover overflow:hidden para evitar sumiço dos gráficos */
-        .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; }
+        .chart-panel { background: var(--bg-panel); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; position: relative; width: 100%; overflow: hidden; }
         .chart-panel.normal-h { min-height: 400px; }
         .chart-panel.compact { min-height: 320px; } 
-
-        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; min-height: 32px; }
-        
-        /* Tabelas responsivas */
-        .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; width: 100%; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px; font-weight: 600; color: var(--brand); font-size: 13px; min-height: 42px;}
+        .table-container { height: 100%; overflow-y: auto; overflow-x: auto; max-height: 340px; }
         .chart-scroll-wrapper { flex: 1; overflow-y: auto; padding-right: 5px; max-height: 280px; }
         .evol-chart-container { flex: 1; position: relative; min-height: 280px; } 
         
-        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; /* Garante que a tabela não esmague no mobile */ }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
         th { text-align: left; background: #252525; color: #aaa; padding: 8px; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #444; }
         td { border-bottom: 1px solid #333; padding: 8px; vertical-align: middle; }
-        tr.clickable-row:hover { background-color: #333; cursor: pointer; transition: 0.2s; }
-        tr.selected-row { background-color: rgba(255, 215, 0, 0.15); border-left: 3px solid var(--brand); }
-        
+        tr.clickable-row:hover { background-color: #333; cursor: pointer; }
         .badge { padding: 3px 6px; border-radius: 3px; font-size: 9px; font-weight: bold; display: inline-block;}
         .bg-corr { background: rgba(231, 76, 60, 0.15); color: var(--red); border: 1px solid rgba(231, 76, 60, 0.3); }
         .bg-prev { background: rgba(52, 152, 219, 0.15); color: var(--blue); border: 1px solid rgba(52, 152, 219, 0.3); }
-        
+        .bg-start { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
+
         .sub-header-controls { display: flex; gap: 8px; align-items: center; background: #252525; padding: 6px 10px; border-radius: 4px; border: 1px solid #333; flex-wrap: nowrap; width: auto; }
-        .sub-header-controls select { background:#333; color:#fff; border:1px solid #555; padding:6px; border-radius:4px; font-size:11px; }
+        .sub-header-controls select { flex: 1; min-width: 0; width: auto; background:#333; color:#fff; border:1px solid #555; padding:6px; border-radius:4px; }
         .btn-clear { background: #333; color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 10px; text-transform: uppercase; transition: all 0.2s; }
         .btn-clear:hover { background: var(--brand); color: #000; border-color: var(--brand); }
 
-        /* RESPONSIVIDADE MOBILE */
+        .dashboard-view { display: none; padding: 20px; animation: fadein 0.4s; }
+        .dashboard-view.visible { display: block; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* RESPONSIVIDADE */
         @media (max-width: 900px) {
-            header { justify-content: center; padding-bottom: 10px; }
-            .logo-area { width: 100%; justify-content: center; margin-bottom: 5px; }
+            header { position: relative; top: auto; justify-content: space-between; padding: 10px; }
+            .logo-area { width: auto; order: 1; margin-bottom: 0; font-size: 18px; }
+            .logo-area .material-icons { font-size: 24px; }
             
-            /* Menu em uma linha com abreviação */
-            .nav-pills { order: 2; width: 100%; justify-content: space-between; margin-bottom: 5px; flex-wrap: nowrap; overflow-x: auto; }
-            .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 10px; text-align: center; white-space: nowrap; }
-            .mobile-hide { display: none; } /* Oculta textos extras */
-
-            .filter-bar { order: 3; width: 100%; justify-content: center; margin-top: 5px; }
-            .custom-dropdown { width: 100%; max-width: 300px; }
-
+            /* Ajuste para filtro e user info */
+            .filter-bar { order: 2; width: auto; justify-content: flex-end; gap: 5px; }
+            .user-info-wrapper { padding-left: 5px; border-left: 1px solid #444; }
+            .user-info-display { display: none; } 
+            
+            .custom-dropdown { width: 140px; }
+            .dropdown-btn { padding: 6px 8px; font-size: 11px; }
+            
+            .nav-pills { order: 3; width: 100%; justify-content: space-between; margin-top: 10px; overflow-x: hidden; }
+            .nav-item { flex: 1; justify-content: center; padding: 8px 2px; font-size: 11px; text-align: center; }
+            .mobile-hide { display: none; }
             .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
             .charts-row, .split-grid { grid-template-columns: 1fr; }
             .full-width { grid-column: span 1; }
-            
             .chart-panel.normal-h { min-height: 300px; }
             .chart-panel.compact { min-height: 280px; }
             .dashboard-view { padding: 10px; }
-            .sub-header-controls { width: 100%; overflow-x: auto; }
+            .panel-header { flex-direction: column; align-items: flex-start; gap:10px; }
         }
     </style>
 </head>
 <body>
+
+<div id="login-overlay">
+    <div class="login-box">
+        <div class="login-logo">
+            <span class="material-icons" style="color:var(--brand); font-size: 32px;">directions_bus</span>
+            GERTÁXI BI
+        </div>
+        <div style="font-size:12px; color:#888; margin-bottom:20px;">Versão 1.3 - Acesso Restrito</div>
+        
+        <input type="text" id="login-email" class="login-input" placeholder="Usuário / Email">
+        <input type="password" id="login-pass" class="login-input" placeholder="Senha">
+        
+        <button class="btn-login" id="btn-login" onclick="attemptLogin()" disabled>Carregando...</button>
+        <div id="login-msg"></div>
+    </div>
+</div>
 
 <header>
     <div class="logo-area">
@@ -137,35 +201,49 @@
     </div>
     
     <div class="nav-pills">
-        <div class="nav-item active" onclick="setMode('operacional')">
-            <span class="material-icons" style="font-size:16px">build</span> 
-            <span class="mobile-hide">PAINEL </span>OPERACIONAL
+        <div class="nav-item active" id="nav-operacional" onclick="setMode('operacional')">
+            <span class="material-icons" style="font-size:16px">build</span> <span class="mobile-hide">PAINEL </span>OPERACIONAL
         </div>
-        <div class="nav-item" onclick="setMode('gerencial')">
-            <span class="material-icons" style="font-size:16px">insights</span> 
-            <span class="mobile-hide">GESTÃO DE </span>INDICADORES
+        <div class="nav-item" id="nav-gerencial" onclick="setMode('gerencial')">
+            <span class="material-icons" style="font-size:16px">pie_chart</span> <span class="mobile-hide">GESTÃO DE </span>INDICADORES
         </div>
-        <div class="nav-item" onclick="setMode('tecnica')">
-            <span class="material-icons" style="font-size:16px">trending_up</span> 
-            PERFORMANCE<span class="mobile-hide"> TÉCNICA</span>
+        <div class="nav-item" id="nav-tecnica" onclick="setMode('tecnica')">
+            <span class="material-icons" style="font-size:16px">trending_up</span> PERFORMANCE <span class="mobile-hide">TÉCNICA</span>
         </div>
     </div>
 
     <div class="filter-bar">
         <div class="custom-dropdown" id="main-filter-container">
-            <div class="dropdown-btn" onclick="toggleFilterMenu()">
+            <div class="dropdown-btn" onclick="toggleFilterMenu('main')">
                 <span id="filter-text">Carregando...</span>
                 <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
             </div>
-            <div class="dropdown-content" id="filter-options"></div>
+            <div class="dropdown-content" id="filter-options-main">
+            </div>
         </div>
-        <div id="loading" style="font-size:10px; color:#666; margin-left:5px">
-            <span class="material-icons" style="font-size:12px; animation:spin 1s infinite linear">sync</span>
+
+        <div class="custom-dropdown d-none" id="base-filter-container">
+            <div class="dropdown-btn" onclick="toggleFilterMenu('base')">
+                <span id="filter-text-base">Todas as Bases</span>
+                <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
+            </div>
+            <div class="dropdown-content" id="filter-options-base">
+            </div>
+        </div>
+
+        <div class="user-info-wrapper">
+            <div class="user-info-display">
+                <div id="user-name-display" style="font-weight:bold; color:#fff;"></div>
+                <div id="user-role-display" style="font-size:9px; color:var(--brand);"></div>
+            </div>
+            <button class="btn-logout" onclick="logout()" title="Sair / Logout">
+                <span class="material-icons" style="font-size:18px;">logout</span>
+            </button>
         </div>
     </div>
 </header>
 
-<div id="view-operacional" class="dashboard-view visible">
+<div id="view-operacional" class="dashboard-view">
     <div class="kpi-row">
         <div class="card" style="border-color: var(--red)">
             <div class="card-label">Veículos Parados</div>
@@ -310,20 +388,16 @@
 </div>
 
 <div id="view-tecnica" class="dashboard-view">
-    <div class="section-title" style="margin-top:0">
-        <span>Produtividade Mensal</span>
-    </div>
-
     <div class="kpi-row">
         <div class="card" style="border-color: var(--brand)">
             <div class="card-label">Total HH Produzido</div>
             <div class="card-value" id="tech-total-hh">0h</div>
-            <div class="card-sub"><span id="lbl-kpi-filter">Equipe Global</span></div>
+            <div class="card-sub">No período</div>
         </div>
         <div class="card" style="border-color: var(--blue)">
             <div class="card-label">Ordens Entregues</div>
             <div class="card-value" id="tech-total-ordens">0</div>
-            <div class="card-sub">Manutenções</div>
+            <div class="card-sub">Manutenções Fechadas</div>
         </div>
         <div class="card" style="border-color: var(--green)">
             <div class="card-label">Produtividade Média</div>
@@ -337,6 +411,15 @@
         </div>
     </div>
 
+    <div class="section-title">
+        <span>Análise de Produtividade Mensal</span>
+        <div class="sub-header-controls">
+            <select id="tech-year" onchange="processTechnical()"></select>
+            <select id="tech-month" onchange="processTechnical()"></select>
+            <button class="btn-clear" onclick="resetTechFilters()">Limpar</button>
+        </div>
+    </div>
+
     <div class="split-grid">
         <div class="chart-panel normal-h">
             <div class="panel-header">Dispersão: Volume (Ordens) x Esforço (HH)</div>
@@ -344,25 +427,18 @@
         </div>
         
         <div class="chart-panel normal-h">
-            <div class="panel-header">
-                <span id="tech-evol-name" style="color:var(--text-main)">Evolução da Equipe</span>
-            </div>
+            <div class="panel-header">Evolução (HH): <span id="tech-evol-name" style="color:var(--text-main); margin-left:5px">Selecione um técnico</span></div>
             <div style="flex:1; position: relative;"><canvas id="chartTechEvol"></canvas></div>
         </div>
     </div>
 
     <div class="chart-panel normal-h">
         <div class="panel-header">
-            <span>Ranking de Produtividade</span>
-            <div class="sub-header-controls">
-                <select id="tech-year" onchange="processTechnical()"></select>
-                <select id="tech-month" onchange="processTechnical()"></select>
-                <button class="btn-clear" onclick="resetTechnicalView()">Limpar</button>
-            </div>
+            <span>Ranking de Produtividade (Campeões do Mês)</span>
         </div>
         <div class="table-container">
             <table id="tableTechRanking">
-                <thead><tr><th>Pos</th><th>Técnico</th><th>Função</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
+                <thead><tr><th>Pos</th><th>Técnico</th><th>Qtd Ordens</th><th>HH Total</th><th>Média HH/OS</th><th>% Ocupação (Est)</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -376,13 +452,23 @@
         req:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1880712397&single=true&output=csv',
         serv:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=670071232&single=true&output=csv',
         mo:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=267479044&single=true&output=csv',
-        tec:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
+        
+        // Link de USUÁRIOS para Login
+        users: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=1961394362&single=true&output=csv',
+        
+        // NOVO: Link de TÉCNICOS para Filtro de Base
+        tecnicos: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_HABCKNyvRwnidGn1Wf5qFAx8AqXWQBszLO49Sm5fp7_5kYWnoQi3kDbSh-LyO0I9DoFHz7LRO8eU/pub?gid=361502971&single=true&output=csv'
     };
 
     const STATE = { 
-        mode: 'operacional', 
+        mode: null,
         data: {}, 
-        filters: { contracts: new Set(), selectedTech: null, naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null },
+        currentUser: null,
+        filters: { 
+            contracts: new Set(), 
+            bases: new Set(), // Novo filtro de bases
+            naturezaFocus: null, mkbfVehicle: null, mttrNatureza: null, techSelected: null 
+        },
         processed: { centralData: [], mkbfData: {}, mttrData: {}, techRanking: [] }
     };
     let charts = {};
@@ -392,15 +478,35 @@
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('op-today-date').innerText = new Date().toLocaleDateString('pt-BR', dateOptions).toUpperCase();
         
-        await loadFiles(); 
+        await loadFiles();
         
+        checkSession(); 
+
+        const btn = document.getElementById('btn-login');
+        btn.disabled = false;
+        btn.innerText = 'ACESSAR';
+
         document.addEventListener('click', (e) => {
-            const container = document.getElementById('main-filter-container');
-            if (!container.contains(e.target)) document.getElementById('filter-options').classList.remove('show');
+            const containerMain = document.getElementById('main-filter-container');
+            const containerBase = document.getElementById('base-filter-container');
+            
+            if (containerMain && !containerMain.contains(e.target)) {
+                const opt = document.getElementById('filter-options-main');
+                if(opt) opt.classList.remove('show');
+            }
+            if (containerBase && !containerBase.contains(e.target)) {
+                const opt = document.getElementById('filter-options-base');
+                if(opt) opt.classList.remove('show');
+            }
         });
 
         initFilterOptions(); 
-        runDashboardLogic(); 
+        // Inicializa o filtro de Base também
+        initBaseFilterOptions();
+        
+        document.getElementById('login-pass').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') attemptLogin();
+        });
     };
 
     async function loadFiles() {
@@ -411,76 +517,210 @@
                 const sep = txt.split('\n')[0].includes(';') ? ';' : ',';
                 STATE.data[key] = Papa.parse(txt, { header: true, delimiter: sep, skipEmptyLines: true, transformHeader: h=>h.trim() }).data;
             });
-            document.getElementById('loading').innerText = 'ON';
-        } catch (e) { console.error(e); alert("Erro ao carregar dados."); }
+        } catch (e) { 
+            console.error(e); 
+            document.getElementById('login-msg').innerText = "Erro de conexão com a base de dados.";
+        }
+    }
+
+    function checkSession() {
+        const savedUser = localStorage.getItem('gertaxi_user');
+        if (savedUser) {
+            try {
+                STATE.currentUser = JSON.parse(savedUser);
+                applyPermissions(STATE.currentUser.role);
+                updateUserDisplay();
+                document.getElementById('login-overlay').style.display = 'none';
+            } catch (e) {
+                localStorage.removeItem('gertaxi_user');
+            }
+        }
+    }
+
+    function attemptLogin() {
+        const emailInput = document.getElementById('login-email').value.trim();
+        const passInput = document.getElementById('login-pass').value.trim();
+        const msg = document.getElementById('login-msg');
+
+        if (!STATE.data.users) {
+            msg.innerText = "Base de usuários não carregada.";
+            return;
+        }
+
+        const user = STATE.data.users.find(u => 
+            u['Email'] && u['Email'].trim().toLowerCase() === emailInput.toLowerCase() &&
+            u['Senha'] && u['Senha'].trim() === passInput
+        );
+
+        if (user) {
+            STATE.currentUser = {
+                name: user['Nome'],
+                role: user['Permissão'] ? user['Permissão'].trim() : 'Técnico'
+            };
+            localStorage.setItem('gertaxi_user', JSON.stringify(STATE.currentUser));
+            applyPermissions(STATE.currentUser.role);
+            updateUserDisplay();
+            document.getElementById('login-overlay').style.display = 'none';
+        } else {
+            msg.innerText = "Usuário ou senha incorretos.";
+            const box = document.querySelector('.login-box');
+            box.style.transform = "translateX(5px)";
+            setTimeout(() => box.style.transform = "translateX(-5px)", 100);
+            setTimeout(() => box.style.transform = "none", 200);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('gertaxi_user');
+        location.reload(); 
+    }
+
+    function updateUserDisplay() {
+        document.getElementById('user-name-display').innerText = STATE.currentUser.name;
+        document.getElementById('user-role-display').innerText = STATE.currentUser.role.toUpperCase();
+    }
+
+    function applyPermissions(role) {
+        const navOp = document.getElementById('nav-operacional');
+        const navGer = document.getElementById('nav-gerencial');
+        const navTec = document.getElementById('nav-tecnica');
+
+        navOp.classList.remove('hidden');
+        navGer.classList.remove('hidden');
+        navTec.classList.remove('hidden');
+
+        const r = role.toLowerCase();
+
+        if (r === 'admin') {
+            setMode('operacional'); 
+        } 
+        else if (r === 'analista') {
+            navTec.classList.add('hidden');
+            setMode('operacional');
+        } 
+        else if (r === 'técnico' || r === 'tecnico') {
+            navGer.classList.add('hidden');
+            navTec.classList.add('hidden');
+            setMode('operacional');
+        } 
+        else {
+            navGer.classList.add('hidden');
+            navTec.classList.add('hidden');
+            setMode('operacional');
+        }
     }
 
     function setMode(mode) {
         STATE.mode = mode;
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`).classList.add('active');
-        document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
-        document.getElementById(`view-${mode}`).classList.add('visible');
         
-        // Reset Suave de Filtros ao trocar de aba para garantir integridade
-        STATE.filters.contracts = new Set(['Todos']);
-        initFilterOptions(); // Re-renderiza o filtro como "Todos"
+        const btn = document.querySelector(`.nav-item[onclick="setMode('${mode}')"]`);
+        if(btn) btn.classList.add('active');
+        
+        document.querySelectorAll('.dashboard-view').forEach(el => el.classList.remove('visible'));
+        const view = document.getElementById(`view-${mode}`);
+        if(view) view.classList.add('visible');
+        
+        // --- TROCA DE FILTROS VISÍVEIS ---
+        const mainFilter = document.getElementById('main-filter-container');
+        const baseFilter = document.getElementById('base-filter-container');
+
+        if (mode === 'tecnica') {
+            mainFilter.classList.add('d-none');
+            baseFilter.classList.remove('d-none');
+        } else {
+            mainFilter.classList.remove('d-none');
+            baseFilter.classList.add('d-none');
+        }
         
         runDashboardLogic();
     }
     const norm = (str) => (str || '').toString().trim().toUpperCase();
 
-    function toggleFilterMenu() { document.getElementById('filter-options').classList.toggle('show'); }
+    function toggleFilterMenu(type) { 
+        if (type === 'main') {
+            document.getElementById('filter-options-main').classList.toggle('show'); 
+        } else if (type === 'base') {
+            document.getElementById('filter-options-base').classList.toggle('show');
+        }
+    }
 
+    // --- FILTRO DE CONTRATOS (Original) ---
     function initFilterOptions() {
-        const container = document.getElementById('filter-options');
+        const container = document.getElementById('filter-options-main');
         container.innerHTML = '';
         if (!STATE.data.frota) return;
         const lotes = [...new Set(STATE.data.frota.map(f => f['LOTE']).filter(l => l && l.trim() !== '' && l !== 'Desmobilizado'))].sort();
-        addCheckboxOption(container, 'Todos', 'Todos os Contratos', true);
-        lotes.forEach(l => addCheckboxOption(container, l, l, false));
-        updateFilterButtonLabel();
+        addCheckboxOption(container, 'Todos', 'Todos os Contratos', true, 'contracts');
+        lotes.forEach(l => addCheckboxOption(container, l, l, false, 'contracts'));
+        updateFilterButtonLabel('contracts');
     }
 
-    function addCheckboxOption(container, value, label, isChecked) {
+    // --- NOVO: FILTRO DE BASES (Técnico) ---
+    function initBaseFilterOptions() {
+        const container = document.getElementById('filter-options-base');
+        container.innerHTML = '';
+        if (!STATE.data.tecnicos) return;
+        
+        // Busca coluna "Base de execução" ou "Base"
+        const bases = [...new Set(STATE.data.tecnicos.map(t => t['Base de execução'] || t['Base']).filter(b => b && b.trim() !== ''))].sort();
+        
+        addCheckboxOption(container, 'Todos', 'Todas as Bases', true, 'bases');
+        bases.forEach(b => addCheckboxOption(container, b, b, false, 'bases'));
+        updateFilterButtonLabel('bases');
+    }
+
+    function addCheckboxOption(container, value, label, isChecked, type) {
         const item = document.createElement('div');
         item.className = 'dropdown-item';
-        item.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const chk = item.querySelector('input'); chk.checked = !chk.checked; handleCheckboxChange(chk); } };
+        item.onclick = (e) => { if(e.target.tagName !== 'INPUT') { const chk = item.querySelector('input'); chk.checked = !chk.checked; handleCheckboxChange(chk, type); } };
         const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.value = value; checkbox.checked = isChecked;
-        if(isChecked) STATE.filters.contracts.add(value);
-        checkbox.onchange = () => handleCheckboxChange(checkbox);
+        
+        if(isChecked) STATE.filters[type].add(value);
+        
+        checkbox.onchange = () => handleCheckboxChange(checkbox, type);
         const text = document.createElement('span'); text.innerText = label;
         item.appendChild(checkbox); item.appendChild(text); container.appendChild(item);
     }
 
-    function handleCheckboxChange(changedChk) {
+    function handleCheckboxChange(changedChk, type) {
         const val = changedChk.value;
-        const allChk = document.querySelectorAll('#filter-options input[type="checkbox"]');
+        // Seleciona o container correto baseado no tipo
+        const containerId = type === 'contracts' ? 'filter-options-main' : 'filter-options-base';
+        const allChk = document.querySelectorAll(`#${containerId} input[type="checkbox"]`);
+        
         if (val === 'Todos') {
             if(changedChk.checked) {
                 allChk.forEach(c => { if(c.value !== 'Todos') c.checked = false; });
-                STATE.filters.contracts.clear(); STATE.filters.contracts.add('Todos');
-            } else { if(STATE.filters.contracts.size === 1) changedChk.checked = true; }
+                STATE.filters[type].clear(); STATE.filters[type].add('Todos');
+            } else { if(STATE.filters[type].size === 1) changedChk.checked = true; }
         } else {
             if(changedChk.checked) {
-                const chkTodos = document.querySelector('input[value="Todos"]');
-                if(chkTodos && chkTodos.checked) { chkTodos.checked = false; STATE.filters.contracts.delete('Todos'); }
-                STATE.filters.contracts.add(val);
+                const chkTodos = document.querySelector(`#${containerId} input[value="Todos"]`);
+                if(chkTodos && chkTodos.checked) { chkTodos.checked = false; STATE.filters[type].delete('Todos'); }
+                STATE.filters[type].add(val);
             } else {
-                STATE.filters.contracts.delete(val);
-                if(STATE.filters.contracts.size === 0) {
-                    const chkTodos = document.querySelector('input[value="Todos"]');
-                    if(chkTodos) { chkTodos.checked = true; STATE.filters.contracts.add('Todos'); }
+                STATE.filters[type].delete(val);
+                if(STATE.filters[type].size === 0) {
+                    const chkTodos = document.querySelector(`#${containerId} input[value="Todos"]`);
+                    if(chkTodos) { chkTodos.checked = true; STATE.filters[type].add('Todos'); }
                 }
             }
         }
-        updateFilterButtonLabel(); runDashboardLogic();
+        updateFilterButtonLabel(type); 
+        runDashboardLogic();
     }
 
-    function updateFilterButtonLabel() {
-        const lbl = document.getElementById('filter-text');
-        if(STATE.filters.contracts.has('Todos')) lbl.innerText = 'Todos os Contratos';
-        else { const count = STATE.filters.contracts.size; lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`; }
+    function updateFilterButtonLabel(type) {
+        if (type === 'contracts') {
+            const lbl = document.getElementById('filter-text');
+            if(STATE.filters.contracts.has('Todos')) lbl.innerText = 'Todos os Contratos';
+            else { const count = STATE.filters.contracts.size; lbl.innerText = count === 1 ? [...STATE.filters.contracts][0] : `${count} Contratos`; }
+        } else if (type === 'bases') {
+            const lbl = document.getElementById('filter-text-base');
+            if(STATE.filters.bases.has('Todos')) lbl.innerText = 'Todas as Bases';
+            else { const count = STATE.filters.bases.size; lbl.innerText = count === 1 ? [...STATE.filters.bases][0] : `${count} Bases`; }
+        }
     }
 
     function runDashboardLogic() { 
@@ -490,7 +730,7 @@
     }
 
     // =========================================================================
-    // LÓGICA OPERACIONAL
+    // LÓGICA OPERACIONAL (Mantém filtro de CONTRATO)
     // =========================================================================
     function processOperational() {
         const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
@@ -550,31 +790,19 @@
 
         const tbodyOp=document.querySelector('#tableOp tbody'); tbodyOp.innerHTML='';
         ordensAbertas.forEach(o => {
-            let displayHH = "";
-            const modo = norm(o['Modo de manutenção']);
-            
-            // Regra de HH Terceirizada
-            if (modo.includes("TERCEIRIZADA") || modo.includes("EXTERNA")) {
-                displayHH = "--";
-            } else {
-                let oHH=0; 
-                STATE.data.mo.forEach(m => {
-                    let realOrdId = null;
-                    if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
-                    if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
-                });
-                displayHH = oHH.toFixed(1) + "h";
-            }
-
-            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${displayHH}</td></tr>`;
+            let oHH=0; 
+            STATE.data.mo.forEach(m => {
+                let realOrdId = null;
+                if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+                if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
+            });
+            tbodyOp.innerHTML += `<tr><td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td><td><strong>${o['Frota']}</strong></td><td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td><td>${o['Modo de manutenção'].substring(0,4)}</td><td>${o['Data da abertura']}</td><td style="font-weight:bold">${oHH.toFixed(1)}h</td></tr>`;
         });
-        
-        // Gráfico com Datalabels
         renderDoughnutWithLabels('chartOpType', ['Corretiva', 'Preventiva'], [hhCorr, hhPrev], ['#e74c3c', '#3498db']);
     }
 
     // =========================================================================
-    // LÓGICA GERENCIAL
+    // LÓGICA GERENCIAL (Mantém filtro de CONTRATO)
     // =========================================================================
     function processManagerial() {
         const frota = STATE.data.frota.filter(f => {
@@ -624,9 +852,12 @@
     }
 
     // =========================================================================
-    // LÓGICA PERFORMANCE TÉCNICA
+    // LÓGICA PERFORMANCE TÉCNICA (AGORA USA BASE DO TÉCNICO!)
     // =========================================================================
     function initTechnicalView() {
+        const years = [...new Set(STATE.data.mo.map(m => {
+            return 2024; // Exemplo fixo conforme original, pode ser dinamico se quiser
+        }))];
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const allDates = [];
         STATE.data.mo.forEach(m => {
@@ -649,14 +880,12 @@
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
             selM.value = now.getMonth();
         }
+        
         processTechnical();
     }
 
-    function resetTechnicalView() {
+    function resetTechFilters() {
         STATE.filters.techSelected = null;
-        const now = new Date();
-        document.getElementById('tech-year').value = now.getFullYear();
-        document.getElementById('tech-month').value = now.getMonth();
         processTechnical();
     }
 
@@ -665,16 +894,22 @@
         const fM = document.getElementById('tech-month').value;
         const month = fM === 'all' ? 'all' : parseInt(fM);
         
-        const frotaLoteMap = new Map(); STATE.data.frota.forEach(f => frotaLoteMap.set(f['FROTA'], f['LOTE']));
-        const checkContract = (frota) => {
-            if(STATE.filters.contracts.has('Todos')) return true;
-            const lote = frotaLoteMap.get(frota); return lote && STATE.filters.contracts.has(lote);
-        };
-
-        const techFuncMap = new Map();
-        if(STATE.data.tec) {
-            STATE.data.tec.forEach(t => techFuncMap.set(norm(t['Nome']||t['Técnico']), t['Função'] || '-'));
+        // --- NOVA LÓGICA DE FILTRO POR BASE (ITEM A) ---
+        // Cria mapa de Técnicos -> Base
+        const techBaseMap = new Map();
+        if(STATE.data.tecnicos) {
+            STATE.data.tecnicos.forEach(t => {
+                const nome = (t['Técnico']||t['Nome']||'').trim().toUpperCase();
+                const base = (t['Base de execução']||t['Base']||'').trim();
+                if(nome) techBaseMap.set(nome, base);
+            });
         }
+
+        const checkBase = (techBase) => {
+            if(STATE.filters.bases.has('Todos')) return true;
+            return STATE.filters.bases.has(techBase);
+        };
+        // --------------------------------------------------
 
         const techStats = {}; 
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
@@ -690,10 +925,16 @@
 
             if(ordem) {
                 const dtRef = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
+                
                 if(dtRef && dtRef.getFullYear() === year) {
                     if(month === 'all' || dtRef.getMonth() === month) {
-                        if(checkContract(ordem['Frota'])) {
+                        
+                        // --- SUBSTITUIÇÃO DO FILTRO DE CONTRATO PELO DE BASE ---
+                        const baseDoTecnico = techBaseMap.get(techName) || 'Indefinida';
+                        
+                        if(checkBase(baseDoTecnico)) { // Usa CheckBase em vez de CheckContract
                             if(!techStats[techName]) techStats[techName] = { hh: 0, orders: new Set(), days: new Set() };
+                            
                             const duration = calcDuration(m['Hora inicial'], m['Hora final']);
                             if(duration > 0) {
                                 techStats[techName].hh += duration;
@@ -706,26 +947,15 @@
             }
         });
 
-        let totalHH = 0;
-        let totalOrdersSet = new Set();
         const ranking = [];
 
         Object.entries(techStats).forEach(([name, stat]) => {
-            const funcao = techFuncMap.get(name) || '-';
-            
-            // Filtro interativo: se houver seleção, só soma se for o técnico selecionado
-            if (STATE.filters.techSelected === null || STATE.filters.techSelected === name) {
-                totalHH += stat.hh;
-                stat.orders.forEach(o => totalOrdersSet.add(o));
-            }
-
             const possibleHours = (stat.days.size * 8) || 1; 
             let occup = (stat.hh / possibleHours) * 100;
             if(occup > 100) occup = 100;
 
             ranking.push({
                 name: name,
-                funcao: funcao,
                 hh: stat.hh,
                 qtd: stat.orders.size,
                 avg: stat.orders.size > 0 ? (stat.hh / stat.orders.size) : 0,
@@ -733,27 +963,16 @@
             });
         });
 
-        ranking.sort((a,b) => b.hh - a.hh);
+        ranking.sort((a,b) => b.hh - a.hh); 
         STATE.processed.techRanking = ranking; 
 
-        // Update KPIs
-        const lblFilter = STATE.filters.techSelected ? STATE.filters.techSelected : (STATE.filters.contracts.has('Todos') ? 'Equipe Global' : 'Equipe Filtrada');
-        document.getElementById('lbl-kpi-filter').innerText = lblFilter;
-        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
-        document.getElementById('tech-total-ordens').innerText = totalOrdersSet.size;
-        document.getElementById('tech-avg-prod').innerText = totalOrdersSet.size > 0 ? (totalHH / totalOrdersSet.size).toFixed(1) : '0';
-        
-        // Se houver seleção, contagem é 1, senão é total visível
-        document.getElementById('tech-count').innerText = STATE.filters.techSelected ? 1 : ranking.length;
-
+        // Render Table
         const tbody = document.querySelector('#tableTechRanking tbody');
         tbody.innerHTML = '';
         ranking.forEach((r, i) => {
-            const isSel = r.name === STATE.filters.techSelected ? 'selected-row' : '';
-            const row = `<tr class="clickable-row ${isSel}" onclick="selectTechFromTable('${r.name}')">
+            const row = `<tr class="clickable-row" onclick="selectTechFromTable('${r.name}')">
                 <td>${i+1}º</td>
                 <td style="font-weight:bold; color:var(--brand)">${r.name}</td>
-                <td style="font-size:11px; color:#aaa">${r.funcao}</td>
                 <td>${r.qtd}</td>
                 <td>${r.hh.toFixed(1)}h</td>
                 <td>${r.avg.toFixed(1)}h</td>
@@ -766,17 +985,44 @@
         });
 
         renderTechScatter(ranking);
+        updateTechKPIs();
+
         if (STATE.filters.techSelected) {
-            updateTechEvolution(STATE.filters.techSelected, checkContract);
+            updateTechEvolution(STATE.filters.techSelected);
         } else {
-            updateTechEvolution('Equipe', checkContract);
+            updateTechEvolution('Equipe');
         }
     }
 
     function selectTechFromTable(name) {
-        if(STATE.filters.techSelected === name) STATE.filters.techSelected = null;
-        else STATE.filters.techSelected = name;
+        STATE.filters.techSelected = name;
         processTechnical(); 
+    }
+
+    function updateTechKPIs() {
+        const ranking = STATE.processed.techRanking || []; 
+        const selected = STATE.filters.techSelected;
+        
+        let subset = ranking;
+        if (selected) {
+            subset = ranking.filter(r => r.name === selected);
+        }
+
+        let totalHH = 0;
+        let totalOrders = 0; 
+        
+        subset.forEach(r => {
+            totalHH += r.hh;
+            totalOrders += r.qtd;
+        });
+
+        const count = subset.length;
+        const avg = totalOrders > 0 ? (totalHH / totalOrders) : 0;
+
+        document.getElementById('tech-total-hh').innerText = totalHH.toFixed(1) + 'h';
+        document.getElementById('tech-total-ordens').innerText = totalOrders;
+        document.getElementById('tech-avg-prod').innerText = avg.toFixed(1);
+        document.getElementById('tech-count').innerText = count;
     }
 
     function renderTechScatter(data) {
@@ -803,39 +1049,46 @@
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { callbacks: { label: function(ctx) { return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h em ' + ctx.raw.x + ' ordens'; } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw.name + ': ' + ctx.raw.y.toFixed(1) + 'h em ' + ctx.raw.x + ' ordens';
+                            }
+                        }
+                    },
                     datalabels: { display: false }
                 },
                 scales: {
-                    x: { title: { display: true, text: 'Volume (Ordens)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
-                    y: { title: { display: true, text: 'Esforço (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
+                    x: { title: { display: true, text: 'Qtd Ordens', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } },
+                    y: { title: { display: true, text: 'Horas (HH)', color:'#666' }, grid: { color:'#333' }, ticks: { color:'#aaa' } }
                 },
-                onClick: (e, el) => {
+                onClick: (e, el, chart) => {
                     if(el.length > 0) {
                         const idx = el[0].index;
-                        selectTechFromTable(points[idx].name);
+                        const techName = points[idx].name;
+                        STATE.filters.techSelected = techName;
+                        processTechnical(); 
                     } else {
-                        // Clique no fundo limpa a seleção
-                        if(STATE.filters.techSelected) selectTechFromTable(null); 
+                        STATE.filters.techSelected = null;
+                        processTechnical();
                     }
                 }
             }
         });
     }
 
-    function updateTechEvolution(techName, checkContractFunc) {
-        const title = techName === 'Equipe' ? 'Evolução da Equipe' : `Evolução: ${techName}`;
-        document.getElementById('tech-evol-name').innerText = title;
+    function updateTechEvolution(techName) {
+        if(!techName) return;
+        document.getElementById('tech-evol-name').innerText = techName;
         
         const monthsData = [];
         const labels = [];
-        const now = new Date();
+        const now = new Date(); 
         
         for(let i=5; i>=0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             labels.push(d.toLocaleString('default', { month: 'short' }));
-            const target = techName === 'Equipe' ? null : techName;
-            monthsData.push(calcTechHHForMonth(target, d.getFullYear(), d.getMonth(), checkContractFunc));
+            monthsData.push(calcTechHHForMonth(techName, d.getFullYear(), d.getMonth()));
         }
 
         const ctx = document.getElementById('chartTechEvol').getContext('2d');
@@ -846,11 +1099,12 @@
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'HH Total',
+                    label: 'HH Produzido',
                     data: monthsData,
-                    borderColor: techName !== 'Equipe' ? '#2ecc71' : '#3498db',
-                    backgroundColor: techName !== 'Equipe' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(52, 152, 219, 0.1)',
-                    fill: true, tension: 0.3
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    fill: true,
+                    tension: 0.3
                 }]
             },
             options: {
@@ -861,23 +1115,40 @@
         });
     }
 
-    function calcTechHHForMonth(targetName, year, month, checkContractFunc) {
+    function calcTechHHForMonth(name, year, month) {
         let hh = 0;
+        
+        // --- NOVA LÓGICA PARA EVOLUÇÃO TAMBÉM ---
+        const techBaseMap = new Map();
+        if(STATE.data.tecnicos) {
+            STATE.data.tecnicos.forEach(t => {
+                const nome = (t['Técnico']||t['Nome']||'').trim().toUpperCase();
+                const base = (t['Base de execução']||t['Base']||'').trim();
+                if(nome) techBaseMap.set(nome, base);
+            });
+        }
+        const checkBase = (techBase) => {
+            if(STATE.filters.bases.has('Todos')) return true;
+            return STATE.filters.bases.has(techBase);
+        };
+        // ----------------------------------------
+
         const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
         const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
         
         STATE.data.mo.forEach(m => {
             const tName = (m['Técnico']||'').trim().toUpperCase();
-            if(tName === '' || tName === 'ND') return;
-            
-            if(targetName && tName !== targetName) return;
-            
+            if(name !== 'Equipe' && tName !== name) return;
+            if(name === 'Equipe' && (tName === 'ND' || tName === '')) return;
+
             let ordem = null;
             if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) ordem = ordemMap.get(s['ID_Ordem']); }
             else { ordem = ordemMap.get(m['ID_Ordem']); }
             
             if(ordem) {
-                if(!targetName && checkContractFunc && !checkContractFunc(ordem['Frota'])) return;
+                // Checa BASE DO TECNICO em vez de Contrato
+                const baseDoTecnico = techBaseMap.get(tName) || 'Indefinida';
+                if(!checkBase(baseDoTecnico)) return;
 
                 const dt = parseDate(ordem['Data do fechamento'] || ordem['Data da abertura']);
                 if(dt && dt.getFullYear() === year && dt.getMonth() === month) {
@@ -888,7 +1159,7 @@
         return hh;
     }
 
-    // Auxiliares e Filtros Gerenciais
+    // ... (Funções auxiliares e de filtros anteriores mantidas iguais) ...
     function setupCentralFilters() {
         const years = [...new Set(STATE.processed.centralData.map(d => d.year).filter(y => y > 2000))].sort().reverse();
         const selY = document.getElementById('central-year'); const selM = document.getElementById('central-month');
@@ -898,12 +1169,14 @@
         addOption(selM, 'all', 'Mês'); ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
         if(oldY && years.includes(parseInt(oldY))) selY.value = oldY; if(oldM) selM.value = oldM;
     }
+
     function resetCentralSelection() { 
         STATE.filters.naturezaFocus = null; 
         document.getElementById('central-year').value = 'all'; 
         document.getElementById('central-month').value = 'all'; 
         updateCentralCharts(); 
     }
+
     function updateCentralCharts() {
         const fY = document.getElementById('central-year').value; const fM = document.getElementById('central-month').value;
         const filtered = STATE.processed.centralData.filter(d => { return (fY === 'all' || d.year == fY) && (fM === 'all' || d.month == fM); });
@@ -911,8 +1184,194 @@
         renderInteractiveDoughnut(Object.keys(cNat), Object.values(cNat), filtered);
         STATE.filters.naturezaFocus = null; document.getElementById('pareto-filter-label').innerText = `(Todas)`; updatePareto(filtered);
     }
-    
-    // Funções Gráficas Específicas
+
+    function processMKBFData(reqs) {
+        const byFrota = {};
+        reqs.forEach(r => {
+            if(!byFrota[r['Frota']]) byFrota[r['Frota']] = [];
+            byFrota[r['Frota']].push({ date: parseDate(r['Data da parada']), km: parseInt(r['Odômetro (Km)'])||0 });
+        });
+        const dataByYear = {};
+        Object.entries(byFrota).forEach(([frota, list]) => {
+            list.sort((a,b) => a.km - b.km);
+            for(let i=1; i < list.length; i++) {
+                const delta = list[i].km - list[i-1].km; const dt = list[i].date;
+                if(dt && delta > 0 && delta < 50000) {
+                    const y = dt.getFullYear(); const m = dt.getMonth();
+                    if(!dataByYear[y]) dataByYear[y] = [];
+                    dataByYear[y].push({ frota: frota, mes: m, km: delta, falha: 1 });
+                }
+            }
+        });
+        STATE.processed.mkbfData = dataByYear;
+    }
+    function setupMKBFYearFilter() {
+        const years = Object.keys(STATE.processed.mkbfData).sort().reverse();
+        const sel = document.getElementById('mkbf-year'); const old = sel.value; sel.innerHTML = '';
+        if(years.length === 0) { addOption(sel, '', '0'); return; }
+        years.forEach(y => addOption(sel, y, y));
+        if(old && years.includes(old)) sel.value = old; else sel.value = years[0];
+    }
+    function resetMKBFSelection() { STATE.filters.mkbfVehicle = null; renderMKBFPanels(); }
+    function renderMKBFPanels() {
+        const year = document.getElementById('mkbf-year').value;
+        const rawList = STATE.processed.mkbfData[year] || [];
+        const vehicleStats = {};
+        rawList.forEach(item => {
+            if(!vehicleStats[item.frota]) vehicleStats[item.frota] = { km: 0, falhas: 0 };
+            vehicleStats[item.frota].km += item.km; vehicleStats[item.frota].falhas += item.falha;
+        });
+        const chartData = Object.entries(vehicleStats)
+            .map(([frota, s]) => ({ frota, mkbf: s.falhas > 0 ? Math.round(s.km/s.falhas) : 0 }))
+            .sort((a,b) => b.mkbf - a.mkbf);
+        renderMKBFVehicleChart(chartData);
+        renderMKBFEvolChart(rawList);
+    }
+    function renderMKBFVehicleChart(data) {
+        const ctx = document.getElementById('chartMgmtMKBFVeic').getContext('2d');
+        if(charts['mkbfVeic']) charts['mkbfVeic'].destroy();
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        document.getElementById('mkbf-veic-inner-container').style.height = `${finalHeight}px`;
+        const labels = data.map(d => d.frota); const values = data.map(d => d.mkbf);
+        const colors = labels.map(l => l === STATE.filters.mkbfVehicle ? '#FFD700' : '#3498db');
+        charts['mkbfVeic'] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'MKBF (Km)', data: values, backgroundColor: colors, barPercentage: 0.8, categoryPercentage: 0.9 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mkbfVehicle = labels[idx]; renderMKBFPanels(); } },
+                scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+    function renderMKBFEvolChart(rawList) {
+        let filteredList = rawList; let title = "Evolução do MKBF";
+        if (STATE.filters.mkbfVehicle) { filteredList = rawList.filter(d => d.frota === STATE.filters.mkbfVehicle); title = `MKBF: ${STATE.filters.mkbfVehicle}`; }
+        document.getElementById('lbl-mkbf-evolucao').innerText = title;
+        const mesesData = Array(12).fill({km:0, falhas:0}).map(x => ({...x}));
+        filteredList.forEach(d => { mesesData[d.mes].km += d.km; mesesData[d.mes].falhas += d.falha; });
+        const dataPoints = mesesData.map(m => m.falhas > 0 ? Math.round(m.km/m.falhas) : null);
+        const ctx = document.getElementById('chartMgmtMKBF').getContext('2d');
+        if(charts['mkbfEvol']) charts['mkbfEvol'].destroy();
+        charts['mkbfEvol'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['J','F','M','A','M','J','J','A','S','O','N','D'],
+                datasets: [{
+                    label: 'MKBF', data: dataPoints,
+                    borderColor: STATE.filters.mkbfVehicle ? '#FFD700' : '#3498db',
+                    backgroundColor: STATE.filters.mkbfVehicle ? 'rgba(255, 215, 0, 0.1)' : 'rgba(52, 152, 219, 0.1)',
+                    fill: true, tension: 0.3, spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+
+    function processMTTRData(idsF) {
+        const servMap = new Map(); STATE.data.serv.forEach(s => servMap.set(s['ID'], s));
+        const ordemMap = new Map(); STATE.data.ordem.forEach(o => ordemMap.set(o['ID'], o));
+        const dataByYear = {};
+        STATE.data.mo.forEach(m => {
+            let realOrdId = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+            if(realOrdId) {
+                const ordem = ordemMap.get(realOrdId);
+                if(ordem) {
+                    const isCorrective = norm(ordem['Tipo de manutenção']).includes('CORRETIVA');
+                    const isEncerrada = norm(ordem['Status da ordem']) === 'ENCERRADA';
+                    const isFrotaOk = idsF.has(ordem['Frota']);
+                    if(isCorrective && isEncerrada && isFrotaOk) {
+                        const dt = parseDate(ordem['Data da abertura']);
+                        if(dt) {
+                            const y = dt.getFullYear(); const mes = dt.getMonth();
+                            const duration = calcDuration(m['Hora inicial'], m['Hora final']);
+                            const natureza = (servMap.get(m['ID_SERV']) ? servMap.get(m['ID_SERV'])['Natureza do serviço'] : null) || 'GERAL';
+                            if(!dataByYear[y]) dataByYear[y] = [];
+                            dataByYear[y].push({ natureza: natureza, mes: mes, hours: duration, id_ordem: ordem['ID'] });
+                        }
+                    }
+                }
+            }
+        });
+        STATE.processed.mttrData = dataByYear;
+    }
+
+    function setupMTTRYearFilter() {
+        const years = Object.keys(STATE.processed.mttrData).sort().reverse();
+        const sel = document.getElementById('mttr-year'); const old = sel.value; sel.innerHTML = '';
+        if(years.length === 0) { addOption(sel, '', '0'); return; }
+        years.forEach(y => addOption(sel, y, y));
+        if(old && years.includes(old)) sel.value = old; else sel.value = years[0];
+    }
+    function resetMTTRSelection() { STATE.filters.mttrNatureza = null; renderMTTRPanels(); }
+    function renderMTTRPanels() {
+        const year = document.getElementById('mttr-year').value;
+        const rawList = STATE.processed.mttrData[year] || [];
+        const natGrouping = {}; 
+        rawList.forEach(item => {
+            if(!natGrouping[item.natureza]) natGrouping[item.natureza] = { hours: 0, orders: new Set() };
+            natGrouping[item.natureza].hours += item.hours;
+            natGrouping[item.natureza].orders.add(item.id_ordem);
+        });
+        const chartData = Object.entries(natGrouping)
+            .map(([nat, s]) => ({ natureza: nat, mttr: s.orders.size > 0 ? (s.hours / s.orders.size) : 0 }))
+            .sort((a,b) => b.mttr - a.mttr);
+        renderMTTRRankingChart(chartData);
+        renderMTTREvolChart(rawList);
+    }
+
+    function renderMTTRRankingChart(data) {
+        const ctx = document.getElementById('chartMgmtMTTRRanking').getContext('2d');
+        if(charts['mttrRank']) charts['mttrRank'].destroy();
+        const minHeight = 280; const estimatedHeight = data.length * 25; const finalHeight = Math.max(minHeight, estimatedHeight);
+        document.getElementById('mttr-nat-inner-container').style.height = `${finalHeight}px`;
+        const labels = data.map(d => d.natureza); const values = data.map(d => d.mttr.toFixed(1));
+        const colors = labels.map(l => l === STATE.filters.mttrNatureza ? '#FFD700' : '#e67e22');
+        charts['mttrRank'] = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'MTTR (h)', data: values, backgroundColor: colors, barPercentage: 0.8, categoryPercentage: 0.9 }] },
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                onClick: (e, el) => { if(el.length > 0) { const idx = el[0].index; STATE.filters.mttrNatureza = labels[idx]; renderMTTRPanels(); } },
+                scales: { x: { grid: {color:'#333'}, ticks: { color: '#aaa', font:{size:10}} }, y: { grid: {display:false}, ticks: { color: '#fff', autoSkip: false, font:{size:11} } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+    function renderMTTREvolChart(rawList) {
+        let filteredList = rawList; let title = "Evolução do MTTR";
+        if (STATE.filters.mttrNatureza) { filteredList = rawList.filter(d => d.natureza === STATE.filters.mttrNatureza); title = `MTTR: ${STATE.filters.mttrNatureza}`; }
+        document.getElementById('lbl-mttr-evolucao').innerText = title;
+        const mesesData = Array(12).fill(null).map(() => ({ hours: 0, orders: new Set() }));
+        filteredList.forEach(d => { mesesData[d.mes].hours += d.hours; mesesData[d.mes].orders.add(d.id_ordem); });
+        const dataPoints = mesesData.map(m => m.orders.size > 0 ? (m.hours / m.orders.size).toFixed(1) : null);
+        const ctx = document.getElementById('chartMgmtMTTREvol').getContext('2d');
+        if(charts['mttrEvol']) charts['mttrEvol'].destroy();
+        charts['mttrEvol'] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['J','F','M','A','M','J','J','A','S','O','N','D'],
+                datasets: [{
+                    label: 'MTTR', data: dataPoints,
+                    borderColor: STATE.filters.mttrNatureza ? '#FFD700' : '#e67e22',
+                    backgroundColor: STATE.filters.mttrNatureza ? 'rgba(255, 215, 0, 0.1)' : 'rgba(230, 126, 34, 0.1)',
+                    fill: true, tension: 0.3, spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false }, ticks: { color: '#aaa' } } },
+                plugins: { legend: { display: false }, datalabels: { display: false } }
+            }
+        });
+    }
+
     function renderInteractiveDoughnut(l, d, rawData) {
         const ctx = document.getElementById('chartMgmtNatureza').getContext('2d');
         if(charts['natureza']) charts['natureza'].destroy();
@@ -923,23 +1382,7 @@
                 responsive:true, maintainAspectRatio:false, 
                 plugins:{
                     legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}, 
-                    datalabels: {
-                        color: '#fff',
-                        font: { weight: 'bold', size: 11 },
-                        formatter: (value, ctx) => {
-                            let sum = 0;
-                            let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => { sum += data; });
-                            if(sum === 0) return '0%';
-                            return (value*100 / sum).toFixed(1)+"%";
-                        },
-                        display: function(context) {
-                             var dataset = context.dataset;
-                             var value = dataset.data[context.dataIndex];
-                             var total = dataset.data.reduce((a, b) => a + b, 0);
-                             return (total > 0 && (value / total > 0.05)); 
-                        }
-                    }
+                    datalabels: { display: false } 
                 },
                 onClick: (e, el) => {
                     if(el.length > 0) {
@@ -1002,7 +1445,6 @@
         });
     }
 
-    // Parsers
     function parseDate(s) { if(!s)return null; if(s.includes('/')) {const p=s.split(' ')[0].split('/'); return new Date(p[2],p[1]-1,p[0]);} return new Date(s); }
     function calcDuration(s,e) { if(!s||!e)return 0; const tm=x=>{const p=x.split(':'); return parseInt(p[0])*60+parseInt(p[1])}; let d=tm(e)-tm(s); if(d<0)d+=1440; return d/60; }
     function calculateGlobalMKBF(r) {
