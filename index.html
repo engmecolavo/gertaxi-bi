@@ -765,34 +765,24 @@
             });
         });
 
-const tbodyOp=document.querySelector('#tableOp tbody'); tbodyOp.innerHTML='';
-        ordensAbertas.forEach(o => {
-            // --- NOVA LÓGICA AQUI ---
-            let displayHH = "";
-            const modo = norm(o['Modo de manutenção']);
+        const tbodyMO = document.querySelector('#tableMO tbody'); tbodyMO.innerHTML = '';
+        if(moTabelaDados.length===0) tbodyMO.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666;padding:20px">Nenhum técnico em atividade no momento.</td></tr>';
+        else moTabelaDados.forEach(d => tbodyMO.innerHTML += `<tr><td style="font-weight:bold;color:var(--brand)">${d.numOrdem}</td><td>${d.tecnico}</td><td style="color:#aaa">${d.frota}</td><td><span class="badge ${norm(d.tipoManut).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${d.tipoManut}</span></td><td>${d.natureza}</td><td>${d.tipoServ}</td><td>${d.inicio}</td></tr>`);
 
-            if (modo.includes("TERCEIRIZADA") || modo.includes("EXTERNA")) {
-                displayHH = "--"; // Regra: Terceirizada não tem HH interno
-            } else {
-                // Cálculo padrão de HH se for interna
-                let oHH=0; 
-                STATE.data.mo.forEach(m => {
-                    let realOrdId = null;
-                    if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
-                    if(realOrdId === o['ID']) oHH += calcDuration(m['Hora inicial'], m['Hora final']);
-                });
-                displayHH = oHH.toFixed(1) + "h";
+        let somaDias=0; const hoje=new Date(); ordensAbertas.forEach(o=>{const d=parseDate(o['Data da abertura']); if(d) somaDias+=(hoje-d)/(864e5);});
+        const tma = ordensAbertas.length>0?(somaDias/ordensAbertas.length).toFixed(1):0;
+        
+        let totalHH=0, hhCorr=0, hhPrev=0; 
+        const idsAbertos = new Set(ordensAbertas.map(o=>o['ID']));
+        const mapTipo = new Map(); ordensAbertas.forEach(o => mapTipo.set(o['ID'], norm(o['Tipo de manutenção'])));
+        
+        STATE.data.mo.forEach(m => {
+            let realOrdId = null;
+            if(m['ID_SERV']) { const s = servMap.get(m['ID_SERV']); if(s) realOrdId = s['ID_Ordem']; } else { realOrdId = m['ID_Ordem']; }
+            if(realOrdId && idsAbertos.has(realOrdId)) {
+                const h = calcDuration(m['Hora inicial'], m['Hora final']);
+                if (h > 0) { totalHH += h; const t = mapTipo.get(realOrdId) || ''; if(t.includes('CORRETIVA')) hhCorr += h; else hhPrev += h; }
             }
-            // ------------------------
-
-            tbodyOp.innerHTML += `<tr>
-                <td style="color:var(--brand);font-weight:bold">${o['Nº Ordem']||'-'}</td>
-                <td><strong>${o['Frota']}</strong></td>
-                <td><span class="badge ${norm(o['Tipo de manutenção']).includes('CORRETIVA')?'bg-corr':'bg-prev'}">${o['Tipo de manutenção']}</span></td>
-                <td>${o['Modo de manutenção'].substring(0,4)}</td>
-                <td>${o['Data da abertura']}</td>
-                <td style="font-weight:bold">${displayHH}</td>
-            </tr>`;
         });
 
         document.getElementById('op-parados').innerText=frotaParada; document.getElementById('op-tma').innerText=tma+'d';
@@ -1382,7 +1372,7 @@ const tbodyOp=document.querySelector('#tableOp tbody'); tbodyOp.innerHTML='';
         });
     }
 
-function renderInteractiveDoughnut(l, d, rawData) {
+    function renderInteractiveDoughnut(l, d, rawData) {
         const ctx = document.getElementById('chartMgmtNatureza').getContext('2d');
         if(charts['natureza']) charts['natureza'].destroy();
         charts['natureza'] = new Chart(ctx, {
@@ -1392,26 +1382,7 @@ function renderInteractiveDoughnut(l, d, rawData) {
                 responsive:true, maintainAspectRatio:false, 
                 plugins:{
                     legend:{position:'right', labels:{color:'#aaa', font:{size:11}}}, 
-                    // --- ALTERAÇÃO AQUI: Lógica de Rótulos de Dados ---
-                    datalabels: {
-                        color: '#fff',
-                        font: { weight: 'bold', size: 11 },
-                        formatter: (value, ctx) => {
-                            let sum = 0;
-                            let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => { sum += data; });
-                            if(sum === 0) return '0%';
-                            return (value*100 / sum).toFixed(1)+"%";
-                        },
-                        display: function(context) {
-                             var dataset = context.dataset;
-                             var value = dataset.data[context.dataIndex];
-                             var total = dataset.data.reduce((a, b) => a + b, 0);
-                             // Mostrar apenas se a fatia for maior que 5%
-                             return (total > 0 && (value / total > 0.05)); 
-                        }
-                    }
-                    // --------------------------------------------------
+                    datalabels: { display: false } 
                 },
                 onClick: (e, el) => {
                     if(el.length > 0) {
@@ -1485,4 +1456,3 @@ function renderInteractiveDoughnut(l, d, rawData) {
 </script>
 </body>
 </html>
-
