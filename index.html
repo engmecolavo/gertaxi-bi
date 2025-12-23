@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BI 1.3 Refinado | Sistema de Gestão Gertáxi</title>
+    <title>BI 1.3 (Com Rótulos) | Sistema de Gestão Gertáxi</title>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -487,15 +487,8 @@
         document.addEventListener('click', (e) => {
             const containerMain = document.getElementById('main-filter-container');
             const containerBase = document.getElementById('base-filter-container');
-            
-            if (containerMain && !containerMain.contains(e.target)) {
-                const opt = document.getElementById('filter-options-main');
-                if(opt) opt.classList.remove('show');
-            }
-            if (containerBase && !containerBase.contains(e.target)) {
-                const opt = document.getElementById('filter-options-base');
-                if(opt) opt.classList.remove('show');
-            }
+            if (containerMain && !containerMain.contains(e.target)) document.getElementById('filter-options-main').classList.remove('show');
+            if (containerBase && !containerBase.contains(e.target)) document.getElementById('filter-options-base').classList.remove('show');
         });
 
         initFilterOptions(); 
@@ -758,8 +751,6 @@
         ordensAbertas.forEach(o => {
             let displayHH = "";
             const modo = norm(o['Modo de manutenção']);
-            
-            // Regra de HH Terceirizada
             if (modo.includes("TERCEIRIZADA") || modo.includes("EXTERNA")) {
                 displayHH = "--";
             } else {
@@ -847,7 +838,6 @@
             uniqueYears.forEach(y => addOption(selY, y, y));
             addOption(selM, 'all', 'Todos'); 
             ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].forEach((m, i) => addOption(selM, i, m));
-            
             const now = new Date();
             if(uniqueYears.includes(now.getFullYear())) selY.value = now.getFullYear();
             selM.value = now.getMonth();
@@ -1030,7 +1020,7 @@
     }
 
     function updateTechEvolution(techName, checkBaseFunc) {
-        const title = techName === 'Equipe' ? 'Evolução da Equipe' : `Evolução (HH): ${techName}`;
+        const title = techName === 'Equipe' ? 'Evolução da Equipe' : `Evolução: ${techName}`;
         document.getElementById('tech-evol-name').innerText = title;
         
         const monthsData = [];
